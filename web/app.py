@@ -56,6 +56,17 @@ class GeneratePdfRequest(BaseModel):
 # Ensure data directory is initialized
 init_data_files("data")
 
+static_dir = os.path.join(os.path.dirname(__file__), "static")
+os.makedirs(static_dir, exist_ok=True)
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+@app.get("/")
+def serve_index():
+    index_path = os.path.join(static_dir, "index.html")
+    if not os.path.exists(index_path):
+        raise HTTPException(status_code=404, detail="index.html tidak ditemukan")
+    return FileResponse(index_path, media_type="text/html")
+
 @app.get("/api/calendar")
 def get_calendar() -> Dict[str, Any]:
     """Returns the full 27-week internship calendar, partitioned into 6 monthly bundles."""

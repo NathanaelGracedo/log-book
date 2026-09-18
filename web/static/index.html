@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Book Magang Polinema - PT Naraya Telematika</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Top Header & Navbar -->
+    <header class="app-header">
+      <div class="header-container">
+        <div class="brand-group">
+          <div class="logo-box">
+            <span class="logo-icon">📘</span>
+          </div>
+          <div class="brand-info">
+            <h1 class="brand-title">Log Book Magang Industri</h1>
+            <p class="brand-subtitle">Politeknik Negeri Malang &bull; PT Naraya Telematika</p>
+          </div>
+        </div>
+
+        <!-- Overall Progress Counter Card -->
+        <div class="progress-pill">
+          <div class="progress-stats">
+            <span class="progress-label">Kelengkapan Log Book</span>
+            <span class="progress-ratio" id="progress-ratio">0 / 158 Hari</span>
+            <span class="progress-percent" id="progress-percent">0%</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progress-bar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Action Header Buttons -->
+        <div class="header-actions">
+          <button id="btn-autofill" class="btn btn-emerald" title="Isi hari kosong secara otomatis">
+            <span class="icon">⚡</span>
+            <span>Lengkapi Kosong</span>
+          </button>
+          <button id="btn-open-pdf" class="btn btn-primary" title="Pratinjau & Buat Dokumen PDF">
+            <span class="icon">📄</span>
+            <span>Generate PDF</span>
+          </button>
+          <button id="btn-open-config" class="btn btn-outline" title="Pengaturan Identitas & Pembimbing">
+            <span class="icon">⚙️</span>
+          </button>
+          <button id="btn-theme-toggle" class="btn btn-ghost" title="Ganti Mode Gelap/Terang">
+            <span class="theme-icon">🌓</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-container">
+      <!-- Month & Status Navigation Filters -->
+      <section class="controls-card">
+        <div class="month-tabs" id="month-tabs">
+          <button class="tab-btn active" data-month="all">Semua Bulan</button>
+          <button class="tab-btn" data-month="1">Juli 2026</button>
+          <button class="tab-btn" data-month="2">Agustus 2026</button>
+          <button class="tab-btn" data-month="3">September 2026</button>
+          <button class="tab-btn" data-month="4">Oktober 2026</button>
+          <button class="tab-btn" data-month="5">November 2026</button>
+          <button class="tab-btn" data-month="6">Desember 2026</button>
+        </div>
+
+        <div class="filter-toggles">
+          <span class="filter-label">Filter:</span>
+          <button class="filter-btn active" data-filter="all">Semua</button>
+          <button class="filter-btn" data-filter="missing">Belum Diisi</button>
+          <button class="filter-btn" data-filter="filled">Sudah Diisi</button>
+        </div>
+      </section>
+
+      <!-- Dynamic Bento Grid Container -->
+      <section class="bento-grid" id="bento-container">
+        <!-- Rendered reactively by app.js -->
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <p>Memuat kalender dan catatan kegiatan...</p>
+        </div>
+      </section>
+    </main>
+
+    <!-- Modal: Daily Note Editor -->
+    <div class="modal-overlay hidden" id="modal-editor">
+      <div class="modal-dialog modal-md">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="badge badge-primary" id="editor-hari-badge">Senin</span>
+            <h3 class="modal-title" id="editor-tanggal-title">1 Juli 2026</h3>
+          </div>
+          <button class="modal-close" data-close="modal-editor">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <div class="hours-info-box">
+              <span class="hours-label">Jam Kerja:</span>
+              <strong id="editor-hours">08.00 - 16.00 WIB</strong>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="editor-note" class="form-label">Catatan Kegiatan Harian:</label>
+            <textarea id="editor-note" class="form-textarea" rows="4" placeholder="Ketik catatan kegiatan atau gunakan tombol bantuan di bawah..."></textarea>
+          </div>
+          <div class="editor-assist-bar">
+            <button id="btn-formalize" class="btn btn-sm btn-outline-primary">
+              <span>⚡ Formalize Narasi</span>
+            </button>
+            <button id="btn-suggest-task" class="btn btn-sm btn-outline">
+              <span>💡 Saran Kegiatan IT</span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" data-close="modal-editor">Batal</button>
+          <button id="btn-save-note" class="btn btn-primary">Simpan Catatan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: PDF Generator & Live Preview -->
+    <div class="modal-overlay hidden" id="modal-pdf">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-header">
+          <div class="modal-title-group">
+            <span class="icon">📄</span>
+            <h3 class="modal-title">Pratinjau & Cetak Log Book PDF</h3>
+          </div>
+          <button class="modal-close" data-close="modal-pdf">&times;</button>
+        </div>
+        <div class="modal-body pdf-modal-body">
+          <div class="pdf-controls-bar">
+            <div class="form-inline">
+              <label for="pdf-target-select">Pilih Berkas:</label>
+              <select id="pdf-target-select" class="form-select">
+                <option value="1">Bulan 1 (Juli 2026 - 5 Minggu)</option>
+                <option value="2">Bulan 2 (Agustus 2026 - 4 Minggu)</option>
+                <option value="3">Bulan 3 (September 2026 - 5 Minggu)</option>
+                <option value="4">Bulan 4 (Oktober 2026 - 4 Minggu)</option>
+                <option value="5">Bulan 5 (November 2026 - 4 Minggu)</option>
+                <option value="6">Bulan 6 (Desember 2026 - 5 Minggu)</option>
+                <option value="cumulative" selected>Lengkap Kumulatif (Juli - Desember, 27 Minggu)</option>
+                <option value="all">Kompilasi Seluruh Bundel (6 Bulanan + 1 Kumulatif)</option>
+              </select>
+            </div>
+            <button id="btn-trigger-compile" class="btn btn-primary">
+              <span class="icon">⚙️</span>
+              <span>Kompilasi PDF (XeLaTeX)</span>
+            </button>
+          </div>
+          <div class="pdf-viewer-container" id="pdf-viewer-box">
+            <div class="pdf-placeholder">
+              <p>Pilih bundel dan klik <strong>Kompilasi PDF</strong> untuk melihat pratinjau live di sini.</p>
+            </div>
+            <iframe id="pdf-iframe" class="pdf-frame hidden" src="" title="PDF Preview"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Config Profile -->
+    <div class="modal-overlay hidden" id="modal-config">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-header">
+          <h3 class="modal-title">⚙️ Konfigurasi Profil & Pembimbing</h3>
+          <button class="modal-close" data-close="modal-config">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="config-form">
+            <h4 class="section-title">Data Mahasiswa</h4>
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">Nama Mahasiswa</label>
+                <input type="text" id="cfg-mhs-nama" class="form-input" required>
+              </div>
+              <div class="form-col">
+                <label class="form-label">NIM</label>
+                <input type="text" id="cfg-mhs-nim" class="form-input" required>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">Program Studi</label>
+                <input type="text" id="cfg-mhs-prodi" class="form-input" required>
+              </div>
+              <div class="form-col">
+                <label class="form-label">Mitra Magang</label>
+                <input type="text" id="cfg-mhs-mitra" class="form-input" required>
+              </div>
+            </div>
+
+            <h4 class="section-title">Dosen Pembimbing (Kampus)</h4>
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">Nama Dosen Pembimbing</label>
+                <input type="text" id="cfg-dosen-nama" class="form-input" required>
+              </div>
+              <div class="form-col">
+                <label class="form-label">NIP</label>
+                <input type="text" id="cfg-dosen-nip" class="form-input" required>
+              </div>
+            </div>
+
+            <h4 class="section-title">Pembimbing Lapangan (Industri)</h4>
+            <div class="form-row">
+              <div class="form-col">
+                <label class="form-label">Nama Pembimbing Lapangan</label>
+                <input type="text" id="cfg-lapangan-nama" class="form-input" required>
+              </div>
+              <div class="form-col">
+                <label class="form-label">NIK / ID Karyawan</label>
+                <input type="text" id="cfg-lapangan-nik" class="form-input" required>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" data-close="modal-config">Tutup</button>
+          <button id="btn-save-config" class="btn btn-primary">Simpan Perubahan</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
