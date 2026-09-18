@@ -29,5 +29,13 @@ class TestWebStatic(unittest.TestCase):
         self.assertIn("--primary:", res.text)
         self.assertIn("[data-theme=\"dark\"]", res.text)
 
+    def test_serve_app_js(self):
+        res = self.client.get("/static/app.js")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("javascript", res.headers.get("content-type", ""))
+        self.assertIn("fetchCalendar", res.text)
+        self.assertIn("formalizeNote", res.text)
+
 if __name__ == "__main__":
     unittest.main()
+
