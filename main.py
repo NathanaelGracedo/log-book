@@ -72,7 +72,21 @@ def main():
     group.add_argument("--cumulative-only", action="store_true", help="Hanya generate file PDF kumulatif")
     parser.add_argument("--check-only", action="store_true", help="Hanya cek tanggal kosong tanpa kompilasi PDF")
     parser.add_argument("--non-interactive", action="store_true", help="Nonaktifkan prompt interaktif untuk tanggal kosong")
+    parser.add_argument("--ui", action="store_true", help="Jalankan antarmuka web dashboard interaktif")
+    parser.add_argument("--port", type=int, default=8000, help="Port server web UI (default: 8000)")
+    parser.add_argument("--host", type=str, default="127.0.0.1", help="Host server web UI (default: 127.0.0.1)")
     args = parser.parse_args()
+
+    if args.ui:
+        import uvicorn
+        ensure_assets()
+        init_data_files("data")
+        print(f"\n========================================================")
+        print(f"🚀 Log Book Polinema Web Dashboard Berjalan!")
+        print(f"📍 Akses di peramban web: http://{args.host}:{args.port}")
+        print(f"========================================================\n")
+        uvicorn.run("web.app:app", host=args.host, port=args.port, reload=False)
+        sys.exit(0)
 
     ensure_assets()
     init_data_files("data")
