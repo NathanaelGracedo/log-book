@@ -1,0 +1,22 @@
+mahasiswa:
+  nama: "Nama Mahasiswa"
+  nim: "XXXXXXXXXX"
+  prodi: "Sarjana Terapan Teknik Informatika"
+  mitra: "PT Naraya Telematika"
+
+pembimbing:
+  dosen:
+    nama: "Nama Dosen Pembimbing, M.Kom."
+    nip: "198XXXXXXXXXXXX"
+  lapangan:
+    nama: "Nama Pembimbing Lapangan"
+    nik: "ID/NIK Karyawan"
+
+pengaturan:
+  jam_kerja:
+    senin_jumat:
+      masuk: "08.00"
+      pulang: "16.00"
+    sabtu:
+      masuk: "08.00"
+      pulang: "14.00"
