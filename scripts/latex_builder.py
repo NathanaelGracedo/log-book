@@ -56,51 +56,51 @@ def render_week_page(
     has_polinema = os.path.exists(polinema_logo)
     has_kemen = os.path.exists(kemendikbud_logo)
 
-    logo_left_tex = f"\\includegraphics[height=2.0cm]{{{polinema_logo}}}" if has_polinema else ""
-    logo_right_tex = f"\\includegraphics[height=2.0cm]{{{kemendikbud_logo}}}" if has_kemen else ""
+    logo_left_tex = f"\\includegraphics[height=1.8cm]{{{polinema_logo}}}" if has_polinema else ""
+    logo_right_tex = f"\\includegraphics[height=1.8cm]{{{kemendikbud_logo}}}" if has_kemen else ""
 
-    kop_tex = f"""
-\\begin{{minipage}}[c]{{0.14\\textwidth}}
-\\centering
+    kop_tex = rf"""
+\begin{{minipage}}[c]{{0.14\textwidth}}
+\centering
 {logo_left_tex}
-\\end{{minipage}}%
-\\begin{{minipage}}[c]{{0.72\\textwidth}}
-\\centering
-{{\\fontsize{{9.5pt}}{{11pt}}\\selectfont \\textbf{{KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI}}\\\\}}
-{{\\fontsize{{11pt}}{{13pt}}\\selectfont \\textbf{{POLITEKNIK NEGERI MALANG}}\\\\}}
-{{\\fontsize{{10pt}}{{12pt}}\\selectfont \\textbf{{JURUSAN TEKNOLOGI INFORMASI}}\\\\}}
-{{\\fontsize{{8pt}}{{9.5pt}}\\selectfont Jalan Soekarno Hatta Nomor 9, Jatimulyo, Lowokwaru, Malang 65141\\\\}}
-{{\\fontsize{{8pt}}{{9.5pt}}\\selectfont Telepon (0341) 404424, 404425, Faksimile (0341) 404420\\\\}}
-{{\\fontsize{{8pt}}{{9.5pt}}\\selectfont Laman www.polinema.ac.id\\\\}}
-\\end{{minipage}}%
-\\begin{{minipage}}[c]{{0.14\\textwidth}}
-\\centering
+\end{{minipage}}%
+\begin{{minipage}}[c]{{0.72\textwidth}}
+\centering
+{{\fontsize{{9pt}}{{10.5pt}}\selectfont \textbf{{KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI}}\\}}
+{{\fontsize{{10.5pt}}{{12pt}}\selectfont \textbf{{POLITEKNIK NEGERI MALANG}}\\}}
+{{\fontsize{{9.5pt}}{{11pt}}\selectfont \textbf{{JURUSAN TEKNOLOGI INFORMASI}}\\}}
+{{\fontsize{{7.5pt}}{{9pt}}\selectfont Jalan Soekarno Hatta Nomor 9, Jatimulyo, Lowokwaru, Malang 65141\\}}
+{{\fontsize{{7.5pt}}{{9pt}}\selectfont Telepon (0341) 404424, 404425, Faksimile (0341) 404420\\}}
+{{\fontsize{{7.5pt}}{{9pt}}\selectfont Laman www.polinema.ac.id\\}}
+\end{{minipage}}%
+\begin{{minipage}}[c]{{0.14\textwidth}}
+\centering
 {logo_right_tex}
-\\end{{minipage}}
+\end{{minipage}}
 
-\\vspace{{2pt}}
-\\hrule height 1.5pt
-\\vspace{{1pt}}
-\\hrule height 0.5pt
-\\vspace{{0.3cm}}
+\vspace{{1pt}}
+\hrule height 1.2pt
+\vspace{{1pt}}
+\hrule height 0.5pt
+\vspace{{0.2cm}}
 """
 
-    title_tex = """
-\\begin{center}
-{\\fontsize{12pt}{14pt}\\selectfont \\textbf{LOG BOOK KEGIATAN}\\\\}
-{\\fontsize{12pt}{14pt}\\selectfont \\textbf{PROGRAM MAGANG INDUSTRI}\\\\}
-\\end{center}
-\\vspace{0.2cm}
+    title_tex = r"""
+\begin{center}
+{\fontsize{11pt}{13pt}\selectfont \textbf{LOG BOOK KEGIATAN}\\}
+{\fontsize{11pt}{13pt}\selectfont \textbf{PROGRAM MAGANG INDUSTRI}\\}
+\end{center}
+\vspace{0.15cm}
 """
 
-    identitas_tex = f"""
-\\begin{{tabular}}{{@{{}}p{{3.8cm}} p{{0.2cm}} p{{12.5cm}}@{{}}}}
-Nama Mahasiswa & : & {nama_mhs} \\\\\\\\
-NIM & : & {nim_mhs} \\\\\\\\
-Program Studi & : & {prodi_mhs} \\\\\\\\
-Nama Mitra Industri & : & {mitra_mhs} \\\\\\\\
-\\end{{tabular}}
-\\vspace{{0.3cm}}
+    identitas_tex = rf"""
+\begin{{tabular}}{{@{{}}p{{3.5cm}} p{{0.2cm}} p{{12.5cm}}@{{}}}}
+Nama Mahasiswa & : & {nama_mhs} \\
+NIM & : & {nim_mhs} \\
+Program Studi & : & {prodi_mhs} \\
+Nama Mitra Industri & : & {mitra_mhs} \\
+\end{{tabular}}
+\vspace{{0.2cm}}
 """
 
     # Rows for the table
@@ -111,41 +111,31 @@ Nama Mitra Industri & : & {mitra_mhs} \\\\\\\\
         raw_note = notes_map.get(d_str, "")
         expanded = expand_narrative(raw_note)
         escaped_note = escape_latex(expanded)
-        row = f"\\textbf{{{hari_tgl}}} & {d['jam_masuk']} & {d['jam_pulang']} & {escaped_note} \\\\\\\\"
+        row = f"\\textbf{{{hari_tgl}}} & {d['jam_masuk']} & {d['jam_pulang']} & {escaped_note} \\\\"
         rows_tex.append(row)
 
     table_rows = "\n\\hline\n".join(rows_tex)
 
-    table_tex = f"""
-\\renewcommand{{\\arraystretch}}{{1.35}}
-\\begin{{tabularx}}{{\\textwidth}}{{|p{{4.2cm}}|c|c|X|}}
-\\hline
-\\textbf{{Hari, Tanggal}} & \\textbf{{Jam Masuk}} & \\textbf{{Jam Pulang}} & \\textbf{{Kegiatan}} \\\\\\\\
-\\hline
+    table_tex = rf"""
+\renewcommand{{\arraystretch}}{{1.15}}
+\begin{{tabularx}}{{\textwidth}}{{|p{{3.8cm}}|c|c|X|}}
+\hline
+\textbf{{Hari, Tanggal}} & \textbf{{Jam Masuk}} & \textbf{{Jam Pulang}} & \textbf{{Kegiatan}} \\
+\hline
 {table_rows}
-\\hline
-\\end{{tabularx}}
-\\vspace{{0.4cm}}
+\hline
+\end{{tabularx}}
+\vspace{{0.3cm}}
 """
 
-    ttd_tex = f"""
-\\noindent
-\\begin{{tabularx}}{{\\textwidth}}{{@{{}}X c X@{{}}}}
-Mahasiswa, & & Mengetahui, \\\\\\\\
-& & Dosen Pembimbing, \\\\\\\\
-\\vspace{{1.6cm}} & & \\vspace{{1.6cm}} \\\\\\\\
-\\textbf{{{nama_mhs}}} & & \\textbf{{{nama_dosen}}} \\\\\\\\
-NIM. {nim_mhs} & & NIP. {nip_dosen} \\\\\\\\
-\\end{{tabularx}}
-
-\\vspace{{0.3cm}}
-\\noindent
-\\begin{{tabularx}}{{\\textwidth}}{{@{{}}X c X@{{}}}}
-& & Pembimbing Lapangan, \\\\\\\\
-& & \\vspace{{1.6cm}} \\\\\\\\
-& & \\textbf{{{nama_lapangan}}} \\\\\\\\
-& & NIK. {nik_lapangan} \\\\\\\\
-\\end{{tabularx}}
+    ttd_tex = rf"""
+\noindent
+\begin{{tabularx}}{{\textwidth}}{{@{{}}X X X@{{}}}}
+Mahasiswa, & Mengetahui, & \\
+& Dosen Pembimbing, & Pembimbing Lapangan, \\[1.2cm]
+\textbf{{{nama_mhs}}} & \textbf{{{nama_dosen}}} & \textbf{{{nama_lapangan}}} \\
+NIM. {nim_mhs} & NIP. {nip_dosen} & NIK. {nik_lapangan} \\
+\end{{tabularx}}
 """
 
     return kop_tex + title_tex + identitas_tex + table_tex + ttd_tex

@@ -85,5 +85,40 @@ class TestLatexBuilder(unittest.TestCase):
                     pages = int(pages_line[0].split(":")[1].strip())
                     self.assertEqual(pages, 2)
 
+    def test_full_six_day_week_fits_single_page(self):
+        six_day_week = [{
+            "minggu_ke": 3,
+            "days": [
+                {"date": datetime.date(2026, 7, 6), "date_str": "2026-07-06", "hari": "Senin", "tanggal_str": "6 Juli 2026", "jam_masuk": "08.00", "jam_pulang": "16.00"},
+                {"date": datetime.date(2026, 7, 7), "date_str": "2026-07-07", "hari": "Selasa", "tanggal_str": "7 Juli 2026", "jam_masuk": "08.00", "jam_pulang": "16.00"},
+                {"date": datetime.date(2026, 7, 8), "date_str": "2026-07-08", "hari": "Rabu", "tanggal_str": "8 Juli 2026", "jam_masuk": "08.00", "jam_pulang": "16.00"},
+                {"date": datetime.date(2026, 7, 9), "date_str": "2026-07-09", "hari": "Kamis", "tanggal_str": "9 Juli 2026", "jam_masuk": "08.00", "jam_pulang": "16.00"},
+                {"date": datetime.date(2026, 7, 10), "date_str": "2026-07-10", "hari": "Jumat", "tanggal_str": "10 Juli 2026", "jam_masuk": "08.00", "jam_pulang": "16.00"},
+                {"date": datetime.date(2026, 7, 11), "date_str": "2026-07-11", "hari": "Sabtu", "tanggal_str": "11 Juli 2026", "jam_masuk": "08.00", "jam_pulang": "14.00"},
+            ]
+        }]
+        notes_map = {
+            "2026-07-06": "meeting mingguan sprint planning dan pembagian tiket tugas fitur manajemen pengguna",
+            "2026-07-07": "implementasi endpoint autentikasi jwt pada modul login sistem backend api",
+            "2026-07-08": "coding validasi input form dan sanitasi data payload request transaksi",
+            "2026-07-09": "testing integrasi endpoint autentikasi menggunakan postman dan automated testing",
+            "2026-07-10": "bugfix penanganan token expired pada middleware otorisasi serta perbaikan log format",
+            "2026-07-11": "dokumentasi teknis alur autentikasi pada wiki repositori dan review mingguan",
+        }
+        latex = generate_latex_document(six_day_week, notes_map, self.config)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            out_pdf = os.path.join(tmp_dir, "test_six_days.pdf")
+            success = compile_pdf(latex, out_pdf)
+            self.assertTrue(success)
+            self.assertTrue(os.path.exists(out_pdf))
+
+            # Must fit on exactly 1 page
+            pdfinfo_res = subprocess.run(["pdfinfo", out_pdf], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            self.assertEqual(pdfinfo_res.returncode, 0)
+            pages_line = [l for l in pdfinfo_res.stdout.splitlines() if "Pages:" in l]
+            self.assertTrue(len(pages_line) > 0)
+            pages = int(pages_line[0].split(":")[1].strip())
+            self.assertEqual(pages, 1, f"Expected 1 page for 6-day week, but got {pages}")
+
 if __name__ == "__main__":
     unittest.main()
