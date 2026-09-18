@@ -22,5 +22,12 @@ class TestWebStatic(unittest.TestCase):
         self.assertEqual(res.status_code, 200)
         self.assertIn("text/html", res.headers.get("content-type", ""))
 
+    def test_serve_styles_css(self):
+        res = self.client.get("/static/styles.css")
+        self.assertEqual(res.status_code, 200)
+        self.assertIn("text/css", res.headers.get("content-type", ""))
+        self.assertIn("--primary:", res.text)
+        self.assertIn("[data-theme=\"dark\"]", res.text)
+
 if __name__ == "__main__":
     unittest.main()
