@@ -95,7 +95,7 @@ def expand_narrative(bullet: Optional[str]) -> str:
     if not bullet or not bullet.strip():
         return ""
 
-    clean = bullet.strip().lstrip("-*•1234567890. ").strip()
+    clean = re.sub(r"^[-*•\s]*(?:\d+[\.\)]\s+)?", "", bullet).strip()
     if not clean:
         return ""
 

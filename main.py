@@ -66,9 +66,10 @@ def build_pdf_bundle(weeks: list[dict], notes_map: dict[str, str], config: dict,
 
 def main():
     parser = argparse.ArgumentParser(description="Log Book Polinema Automation Generator")
-    parser.add_argument("-m", "--month", type=int, choices=range(1, 7), help="Pilih bulan ke-1 s/d 6 untuk digenerate")
-    parser.add_argument("--all", action="store_true", help="Generate semua 6 bulan + 1 file kumulatif")
-    parser.add_argument("--cumulative-only", action="store_true", help="Hanya generate file PDF kumulatif")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("-m", "--month", type=int, choices=range(1, 7), help="Pilih bulan ke-1 s/d 6 untuk digenerate")
+    group.add_argument("--all", action="store_true", help="Generate semua 6 bulan + 1 file kumulatif")
+    group.add_argument("--cumulative-only", action="store_true", help="Hanya generate file PDF kumulatif")
     parser.add_argument("--check-only", action="store_true", help="Hanya cek tanggal kosong tanpa kompilasi PDF")
     parser.add_argument("--non-interactive", action="store_true", help="Nonaktifkan prompt interaktif untuk tanggal kosong")
     args = parser.parse_args()
@@ -114,8 +115,8 @@ def main():
             pdf_path = build_pdf_bundle(weeks, notes_map, config, out_name)
             generated.append(pdf_path)
 
-    # Build cumulative PDF if requested or default
-    if args.all or args.cumulative_only or (not args.month and not target_months):
+    # Build cumulative PDF if requested
+    if args.all or args.cumulative_only:
         all_weeks = get_internship_calendar()
         pdf_path = build_pdf_bundle(all_weeks, notes_map, config, CUMULATIVE_FILENAME)
         generated.append(pdf_path)

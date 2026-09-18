@@ -1,16 +1,20 @@
-# tests/test_e2e.py
 import unittest
 import os
+import sys
+import shutil
 import subprocess
 
 class TestEndToEndBuild(unittest.TestCase):
     def test_build_month_1(self):
         # Build month 1
-        res = subprocess.run(["python3", "main.py", "--month", "1", "--non-interactive"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        res = subprocess.run([sys.executable, "main.py", "--month", "1", "--non-interactive"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
         self.assertEqual(res.returncode, 0, f"STDOUT:\n{res.stdout}\nSTDERR:\n{res.stderr}")
         
         pdf_path = "output/Logbook_01_Juli_2026.pdf"
         self.assertTrue(os.path.exists(pdf_path))
+
+        if not shutil.which("pdfinfo") or not shutil.which("pdftotext"):
+            self.skipTest("poppler-utils (pdfinfo/pdftotext) not found on system")
 
         # Verify page count: Month 1 has Weeks 1..5 -> exactly 5 pages
         pdfinfo_res = subprocess.run(["pdfinfo", pdf_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)

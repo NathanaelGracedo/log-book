@@ -53,6 +53,11 @@ class TestNarrativeExpander(unittest.TestCase):
         res_fb2 = expand_narrative("Sinkronisasi skema database staging")
         self.assertEqual(res_fb2, "Sinkronisasi skema database staging.")
 
+        # Leading numbers without bullet markers are preserved (no data loss)
+        res_num_lead = expand_narrative("10 dokumen teknis dievaluasi")
+        self.assertIn("10 dokumen", res_num_lead)
+        self.assertTrue(res_num_lead.startswith("Melakukan 10 dokumen teknis dievaluasi"))
+
         # Verification that tail is not duplicated
         res_no_dup = expand_narrative("meeting mingguan tim")
         self.assertEqual(

@@ -1,5 +1,6 @@
 import unittest
 import os
+import sys
 import subprocess
 from unittest.mock import patch
 from main import (
@@ -13,7 +14,7 @@ from main import (
 
 class TestMainCLI(unittest.TestCase):
     def test_cli_help(self):
-        res = subprocess.run(["python3", "main.py", "--help"], stdout=subprocess.PIPE, text=True)
+        res = subprocess.run([sys.executable, "main.py", "--help"], stdout=subprocess.PIPE, text=True)
         self.assertEqual(res.returncode, 0)
         self.assertIn("--month", res.stdout)
         self.assertIn("--check-only", res.stdout)
@@ -23,7 +24,7 @@ class TestMainCLI(unittest.TestCase):
 
     def test_check_only_flag(self):
         res = subprocess.run(
-            ["python3", "main.py", "--check-only", "--non-interactive"],
+            [sys.executable, "main.py", "--check-only", "--non-interactive"],
             stdout=subprocess.PIPE,
             text=True
         )
@@ -32,7 +33,7 @@ class TestMainCLI(unittest.TestCase):
 
     def test_check_only_specific_month(self):
         res = subprocess.run(
-            ["python3", "main.py", "-m", "1", "--check-only", "--non-interactive"],
+            [sys.executable, "main.py", "-m", "1", "--check-only", "--non-interactive"],
             stdout=subprocess.PIPE,
             text=True
         )
@@ -41,7 +42,7 @@ class TestMainCLI(unittest.TestCase):
 
     def test_check_only_cumulative_flag(self):
         res = subprocess.run(
-            ["python3", "main.py", "--cumulative-only", "--check-only", "--non-interactive"],
+            [sys.executable, "main.py", "--cumulative-only", "--check-only", "--non-interactive"],
             stdout=subprocess.PIPE,
             text=True
         )
@@ -50,7 +51,7 @@ class TestMainCLI(unittest.TestCase):
 
     def test_check_only_all_flag(self):
         res = subprocess.run(
-            ["python3", "main.py", "--all", "--check-only", "--non-interactive"],
+            [sys.executable, "main.py", "--all", "--check-only", "--non-interactive"],
             stdout=subprocess.PIPE,
             text=True
         )
@@ -59,12 +60,22 @@ class TestMainCLI(unittest.TestCase):
 
     def test_invalid_month_choice(self):
         res = subprocess.run(
-            ["python3", "main.py", "-m", "7"],
+            [sys.executable, "main.py", "-m", "7"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True
         )
         self.assertNotEqual(res.returncode, 0)
+
+    def test_mutually_exclusive_flags(self):
+        res = subprocess.run(
+            [sys.executable, "main.py", "-m", "1", "--all"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("not allowed with argument", res.stderr)
 
     def test_load_config_valid(self):
         cfg = load_config("config.yaml")
