@@ -29,7 +29,13 @@ from scripts.data_manager import (
 )
 from scripts.narrative_expander import expand_narrative
 from scripts.curriculum import batch_autofill_notes
-from main import load_config
+from main import (
+    load_config,
+    build_pdf_bundle,
+    OUTPUT_MONTHLY_FILENAMES,
+    CUMULATIVE_FILENAME,
+    ensure_assets
+)
 
 app = FastAPI(title="Log Book Polinema Dashboard API", version="1.0.0")
 
@@ -43,6 +49,9 @@ class FormalizeRequest(BaseModel):
 
 class BatchAutofillRequest(BaseModel):
     overwrite_existing: bool = False
+
+class GeneratePdfRequest(BaseModel):
+    target: Any # 1..6 or "cumulative" or "all"
 
 # Ensure data directory is initialized
 init_data_files("data")
@@ -158,3 +167,81 @@ def update_config(payload: Dict[str, Any]):
         return {"status": "ok", "message": "Konfigurasi profil berhasil diperbarui."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/generate-pdf")
+def generate_pdf(payload: GeneratePdfRequest):
+    """Triggers XeLaTeX compilation for the requested target bundle."""
+    ensure_assets()
+    config = load_config("config.yaml")
+    notes_map = load_all_notes("data")
+    
+    target = payload.target
+    generated_urls = []
+    
+    if target == "all":
+        # Compile all 6 monthly bundles + 1 cumulative
+        for m_idx in range(1, 7):
+            weeks = get_month_bundle_weeks(m_idx)
+            out_name = OUTPUT_MONTHLY_FILENAMES[m_idx]
+            build_pdf_bundle(weeks, notes_map, config, out_name)
+            generated_urls.append(f"/api/pdf/{out_name}")
+            
+        all_weeks = get_internship_calendar()
+        build_pdf_bundle(all_weeks, notes_map, config, CUMULATIVE_FILENAME)
+        generated_urls.append(f"/api/pdf/{CUMULATIVE_FILENAME}")
+        
+        return {
+            "status": "ok",
+            "target": "all",
+            "pdf_url": generated_urls[0],
+            "all_urls": generated_urls,
+            "message": "Semua 6 berkas PDF bulanan dan 1 berkas kumulatif berhasil dibuat."
+        }
+        
+    elif target == "cumulative":
+        all_weeks = get_internship_calendar()
+        out_name = CUMULATIVE_FILENAME
+        build_pdf_bundle(all_weeks, notes_map, config, out_name)
+        return {
+            "status": "ok",
+            "target": "cumulative",
+            "pdf_url": f"/api/pdf/{out_name}",
+            "filename": out_name
+        }
+        
+    else:
+        try:
+            m_idx = int(target)
+            if m_idx not in OUTPUT_MONTHLY_FILENAMES:
+                raise ValueError()
+        except (ValueError, TypeError):
+            raise HTTPException(status_code=400, detail="Target bulan harus berupa angka 1 s/d 6, 'cumulative', atau 'all'.")
+            
+        weeks = get_month_bundle_weeks(m_idx)
+        out_name = OUTPUT_MONTHLY_FILENAMES[m_idx]
+        build_pdf_bundle(weeks, notes_map, config, out_name)
+        return {
+            "status": "ok",
+            "target": m_idx,
+            "pdf_url": f"/api/pdf/{out_name}",
+            "filename": out_name
+        }
+
+@app.get("/api/pdf/{filename}")
+def stream_pdf(filename: str):
+    """Streams a generated PDF file from output/ directory inline for browser viewing."""
+    # Prevent directory traversal
+    clean_name = os.path.basename(filename)
+    if clean_name != filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Nama berkas tidak valid.")
+        
+    pdf_path = os.path.join("output", clean_name)
+    if not os.path.exists(pdf_path):
+        raise HTTPException(status_code=404, detail="Berkas PDF belum digenerate. Silakan klik tombol 'Generate PDF' terlebih dahulu.")
+        
+    return FileResponse(
+        pdf_path,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"inline; filename={clean_name}"}
+    )
+
