@@ -7,6 +7,7 @@ and live PDF preview streaming.
 """
 
 import os
+import tempfile
 import datetime
 from pathlib import Path
 from typing import Optional, Any, Dict
@@ -172,11 +173,20 @@ def get_config():
 @app.post("/api/config")
 def update_config(payload: Dict[str, Any]):
     """Updates profile configuration in config.yaml."""
+    temp_path = None
     try:
-        with open("config.yaml", "w", encoding="utf-8") as f:
+        with tempfile.NamedTemporaryFile(mode="w", dir=".", delete=False, encoding="utf-8") as f:
+            temp_path = f.name
             yaml.dump(payload, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        os.replace(temp_path, "config.yaml")
+        temp_path = None
         return {"status": "ok", "message": "Konfigurasi profil berhasil diperbarui."}
     except Exception as e:
+        if temp_path and os.path.exists(temp_path):
+            try:
+                os.remove(temp_path)
+            except OSError:
+                pass
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/generate-pdf")

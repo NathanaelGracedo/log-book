@@ -59,11 +59,21 @@
   };
 
   // Utilities
+  function escapeHtml(str) {
+    if (!str) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
   function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
     const icon = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
-    toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+    toast.innerHTML = `<span>${icon}</span><span>${escapeHtml(message)}</span>`;
     dom.toastContainer.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = '0';
@@ -311,8 +321,8 @@
         weekHeader.className = 'week-header';
         weekHeader.innerHTML = `
           <div class="week-title">
-            <span>Minggu ke-${week.minggu_ke}</span>
-            <span class="badge badge-primary">${month.name}</span>
+            <span>Minggu ke-${escapeHtml(week.minggu_ke)}</span>
+            <span class="badge badge-primary">${escapeHtml(month.name)}</span>
           </div>
           <span class="badge ${week.days.every((d) => d.is_filled) ? 'badge-emerald' : 'badge-amber'}">
             ${week.days.filter((d) => d.is_filled).length} / ${week.days.length} Terisi
@@ -329,11 +339,16 @@
 
           const hasNote = d.is_filled && d.note;
           const noteText = hasNote ? d.note : 'Belum ada catatan kegiatan';
+          const safeNoteText = escapeHtml(noteText);
+          const datePart0 = d.tanggal_str ? d.tanggal_str.split(' ')[0] : '';
+          const datePart1 = d.tanggal_str && d.tanggal_str.split(' ')[1] ? d.tanggal_str.split(' ')[1].slice(0, 3) : '';
+          const metaStr = `${d.hari}, ${datePart0} ${datePart1}`;
+          const hoursStr = `${d.jam_masuk}-${d.jam_pulang}`;
 
           item.innerHTML = `
-            <div class="day-meta">${d.hari}, ${d.tanggal_str.split(' ')[0]} ${d.tanggal_str.split(' ')[1].slice(0, 3)}</div>
-            <div class="day-hours">${d.jam_masuk}-${d.jam_pulang}</div>
-            <div class="day-note-preview ${hasNote ? '' : 'empty'}" title="${noteText}">${noteText}</div>
+            <div class="day-meta">${escapeHtml(metaStr)}</div>
+            <div class="day-hours">${escapeHtml(hoursStr)}</div>
+            <div class="day-note-preview ${hasNote ? '' : 'empty'}" title="${safeNoteText}">${safeNoteText}</div>
             <button class="btn btn-sm btn-outline-primary btn-edit-day">Edit</button>
           `;
 
