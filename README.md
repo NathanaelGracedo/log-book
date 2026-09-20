@@ -154,12 +154,13 @@ python3 main.py --ui
 ```
 
 Buka peramban web di `http://127.0.0.1:8000`. Dari dashboard Anda dapat:
-- Melihat ringkasan progres hari magang sesuai rentang periode aktif.
-- Memilih status kehadiran (**Hadir**, **Izin**, **Sakit**, **Cuti**, **Libur Nasional**) pada dialog edit harian.
-- Mengubah periode magang dan jadwal kerja langsung melalui modal **Settings / Pengaturan**.
-- Menggunakan tombol **⚡ Formalize Narasi** untuk merapikan teks kegiatan.
-- Menekan tombol **⚡ Auto-Fill Hari Kosong** untuk mengisi hari aktif yang belum terisi.
+- Melihat ringkasan progres hari magang sesuai rentang periode aktif secara visual.
+- **Pengaturan Profil & Jam Kerja Per-Hari**: Mengubah periode magang, jadwal kerja (5 hari vs 6 hari), dan tabel jam kerja harian (Senin–Sabtu dengan baris Sabtu disembunyikan otomatis jika mode 5 hari dipilih) serta nama pembimbing melalui modal **⚙️ Pengaturan**.
+- **Modal Edit Hari & Auto-Hours**: Memilih status kehadiran (**Hadir**, **Izin**, **Sakit**, **Cuti**, **Libur Nasional**). Saat memilih status Hadir, jam kerja otomatis terisi sesuai jadwal hari tersebut.
+- Menggunakan tombol **⚡ Formalize Narasi** untuk merapikan teks kegiatan secara formal.
+- Menekan tombol **⚡ Lengkapi Kosong** untuk mengisi hari aktif yang belum terisi dengan kurikulum IT.
 - Mengompilasi dan melihat pratinjau berkas PDF per bulan atau dokumen kumulatif secara langsung.
+
 
 ---
 
