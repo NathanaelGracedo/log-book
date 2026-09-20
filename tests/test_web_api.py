@@ -109,6 +109,43 @@ class TestWebApi(unittest.TestCase):
         finally:
             self.client.post("/api/config", json=original_cfg)
 
+    def test_calendar_reflects_per_day_hours_and_streamlined_supervisor(self):
+        cfg_res = self.client.get("/api/config")
+        original_cfg = copy.deepcopy(cfg_res.json())
+        try:
+            cfg = copy.deepcopy(original_cfg)
+            cfg.setdefault("pengaturan", {})["jam_kerja"] = {
+                "senin": {"masuk": "08.00", "pulang": "16.00"},
+                "selasa": {"masuk": "08.00", "pulang": "16.00"},
+                "rabu": {"masuk": "08.00", "pulang": "16.00"},
+                "kamis": {"masuk": "08.00", "pulang": "16.00"},
+                "jumat": {"masuk": "08.00", "pulang": "11.30"},
+                "sabtu": {"masuk": "08.00", "pulang": "14.00"},
+            }
+            cfg["pembimbing"] = {
+                "dosen": {"nama": "Dosen Test, M.Kom."},
+                "lapangan": {"nama": "Mentor Test"}
+            }
+            save_res = self.client.post("/api/config", json=cfg)
+            self.assertEqual(save_res.status_code, 200)
+
+            cal_res = self.client.get("/api/calendar")
+            self.assertEqual(cal_res.status_code, 200)
+            cal_data = cal_res.json()
+
+            # Find a Friday in the calendar
+            jumat_days = [
+                d for m in cal_data["months"]
+                for w in m["weeks"]
+                for d in w["days"]
+                if d["hari"] == "Jumat"
+            ]
+            self.assertTrue(len(jumat_days) > 0)
+            self.assertEqual(jumat_days[0]["jam_masuk"], "08.00")
+            self.assertEqual(jumat_days[0]["jam_pulang"], "11.30")
+        finally:
+            self.client.post("/api/config", json=original_cfg)
+
     def test_calendar_day_fields(self):
         # Save a day with status
         self.client.post("/api/save-day", json={"date": "2026-07-03", "status": "izin", "note": "Keperluan keluarga"})
