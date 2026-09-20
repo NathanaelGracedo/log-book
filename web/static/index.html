@@ -207,27 +207,15 @@
             </div>
 
             <h4 class="section-title">Dosen Pembimbing (Kampus)</h4>
-            <div class="form-row">
-              <div class="form-col">
-                <label class="form-label">Nama Dosen Pembimbing</label>
-                <input type="text" id="cfg-dosen-nama" class="form-input" required>
-              </div>
-              <div class="form-col">
-                <label class="form-label">NIP</label>
-                <input type="text" id="cfg-dosen-nip" class="form-input" required>
-              </div>
+            <div class="form-group">
+              <label class="form-label">Nama Dosen Pembimbing</label>
+              <input type="text" id="cfg-dosen-nama" class="form-input" required>
             </div>
 
             <h4 class="section-title">Pembimbing Lapangan (Industri)</h4>
-            <div class="form-row">
-              <div class="form-col">
-                <label class="form-label">Nama Pembimbing Lapangan</label>
-                <input type="text" id="cfg-lapangan-nama" class="form-input" required>
-              </div>
-              <div class="form-col">
-                <label class="form-label">NIK / ID Karyawan</label>
-                <input type="text" id="cfg-lapangan-nik" class="form-input" required>
-              </div>
+            <div class="form-group">
+              <label class="form-label">Nama Pembimbing Lapangan</label>
+              <input type="text" id="cfg-lapangan-nama" class="form-input" required>
             </div>
 
             <h4 class="section-title">Periode & Jadwal Magang</h4>
@@ -252,6 +240,52 @@
                   <input type="radio" name="cfg-hari-kerja" value="senin_jumat">
                   <span>5 Hari Kerja (Senin - Jumat)</span>
                 </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Pengaturan Jam Kerja Harian</label>
+              <div class="hours-table-wrapper">
+                <table class="hours-table" id="table-jam-kerja">
+                  <thead>
+                    <tr>
+                      <th>Hari</th>
+                      <th>Jam Masuk</th>
+                      <th>Jam Pulang</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr data-day="senin">
+                      <td><span class="day-label">Senin</span></td>
+                      <td><input type="text" id="cfg-jam-senin-masuk" class="form-input form-input-sm" value="08.00" required></td>
+                      <td><input type="text" id="cfg-jam-senin-pulang" class="form-input form-input-sm" value="16.00" required></td>
+                    </tr>
+                    <tr data-day="selasa">
+                      <td><span class="day-label">Selasa</span></td>
+                      <td><input type="text" id="cfg-jam-selasa-masuk" class="form-input form-input-sm" value="08.00" required></td>
+                      <td><input type="text" id="cfg-jam-selasa-pulang" class="form-input form-input-sm" value="16.00" required></td>
+                    </tr>
+                    <tr data-day="rabu">
+                      <td><span class="day-label">Rabu</span></td>
+                      <td><input type="text" id="cfg-jam-rabu-masuk" class="form-input form-input-sm" value="08.00" required></td>
+                      <td><input type="text" id="cfg-jam-rabu-pulang" class="form-input form-input-sm" value="16.00" required></td>
+                    </tr>
+                    <tr data-day="kamis">
+                      <td><span class="day-label">Kamis</span></td>
+                      <td><input type="text" id="cfg-jam-kamis-masuk" class="form-input form-input-sm" value="08.00" required></td>
+                      <td><input type="text" id="cfg-jam-kamis-pulang" class="form-input form-input-sm" value="16.00" required></td>
+                    </tr>
+                    <tr data-day="jumat">
+                      <td><span class="day-label">Jumat</span></td>
+                      <td><input type="text" id="cfg-jam-jumat-masuk" class="form-input form-input-sm" value="08.00" required></td>
+                      <td><input type="text" id="cfg-jam-jumat-pulang" class="form-input form-input-sm" value="16.00" required></td>
+                    </tr>
+                    <tr data-day="sabtu" id="row-jam-sabtu">
+                      <td><span class="day-label">Sabtu</span></td>
+                      <td><input type="text" id="cfg-jam-sabtu-masuk" class="form-input form-input-sm" value="08.00" required></td>
+                      <td><input type="text" id="cfg-jam-sabtu-pulang" class="form-input form-input-sm" value="14.00" required></td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </form>

@@ -68,6 +68,30 @@ class TestWebStatic(unittest.TestCase):
         self.assertIn('cfgPeriodeMulai', res_js.text)
         self.assertIn('cfg-hari-kerja', res_js.text)
 
+    def test_hours_table_present_and_nip_nik_removed(self):
+        res_html = self.client.get("/")
+        self.assertEqual(res_html.status_code, 200)
+        # NIP and NIK fields must be completely removed
+        self.assertNotIn('id="cfg-dosen-nip"', res_html.text)
+        self.assertNotIn('id="cfg-lapangan-nik"', res_html.text)
+        # Per-day hours table must be present
+        self.assertIn('id="table-jam-kerja"', res_html.text)
+        self.assertIn('id="cfg-jam-senin-masuk"', res_html.text)
+        self.assertIn('id="cfg-jam-senin-pulang"', res_html.text)
+        self.assertIn('id="cfg-jam-jumat-pulang"', res_html.text)
+        self.assertIn('id="row-jam-sabtu"', res_html.text)
+
+        res_css = self.client.get("/static/styles.css")
+        self.assertEqual(res_css.status_code, 200)
+        self.assertIn('.hours-table', res_css.text)
+        self.assertIn('.hidden-row', res_css.text)
+
+        res_js = self.client.get("/static/app.js")
+        self.assertEqual(res_js.status_code, 200)
+        self.assertIn('table-jam-kerja', res_js.text)
+        self.assertNotIn('cfgDosenNip', res_js.text)
+        self.assertNotIn('cfgLapanganNik', res_js.text)
+
 if __name__ == "__main__":
     unittest.main()
 

@@ -28,10 +28,13 @@
   --bg-surface: #FFFFFF;
   --bg-surface-elevated: #FFFFFF;
   --bg-subtle: #F1F5F9;
+  --bg-card: var(--bg-surface);
+  --bg-card-hover: var(--bg-subtle);
   
   --text-main: #0F172A;
   --text-muted: #64748B;
   --text-subtle: #94A3B8;
+  --text-color: var(--text-main);
 
   --border-color: #E2E8F0;
   --border-focus: #3B82F6;
@@ -747,3 +750,52 @@ body {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* Daily Working Hours Table */
+.hours-table-wrapper {
+  overflow-x: auto;
+  margin-top: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+}
+
+.hours-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+.hours-table th,
+.hours-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.hours-table th {
+  background: var(--bg-card-hover);
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.hours-table tr:last-child td {
+  border-bottom: none;
+}
+
+.form-input-sm {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.85rem;
+  width: 100%;
+  max-width: 110px;
+}
+
+.day-label {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.hidden-row {
+  display: none !important;
+}
+

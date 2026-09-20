@@ -65,12 +65,24 @@
     cfgMhsProdi: document.getElementById('cfg-mhs-prodi'),
     cfgMhsMitra: document.getElementById('cfg-mhs-mitra'),
     cfgDosenNama: document.getElementById('cfg-dosen-nama'),
-    cfgDosenNip: document.getElementById('cfg-dosen-nip'),
     cfgLapanganNama: document.getElementById('cfg-lapangan-nama'),
-    cfgLapanganNik: document.getElementById('cfg-lapangan-nik'),
     cfgPeriodeMulai: document.getElementById('cfg-periode-mulai'),
     cfgPeriodeSelesai: document.getElementById('cfg-periode-selesai'),
+    tableJamKerja: document.getElementById('table-jam-kerja'),
+    rowJamSabtu: document.getElementById('row-jam-sabtu'),
   };
+
+  const DAYS_OF_WEEK = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+
+  function toggleSaturdayRow(schedule) {
+    if (dom.rowJamSabtu) {
+      if (schedule === 'senin_jumat') {
+        dom.rowJamSabtu.classList.add('hidden-row');
+      } else {
+        dom.rowJamSabtu.classList.remove('hidden-row');
+      }
+    }
+  }
 
   // Utilities
   function escapeHtml(str) {
@@ -201,9 +213,21 @@
       dom.cfgMhsProdi.value = mhs.prodi || '';
       dom.cfgMhsMitra.value = mhs.mitra || '';
       dom.cfgDosenNama.value = dosen.nama || '';
-      dom.cfgDosenNip.value = dosen.nip || '';
       dom.cfgLapanganNama.value = lapangan.nama || '';
-      dom.cfgLapanganNik.value = lapangan.nik || '';
+
+      const jamKerja = pengaturan.jam_kerja || {};
+      const legacySj = jamKerja.senin_jumat || {};
+      const legacySabtu = jamKerja.sabtu || {};
+
+      DAYS_OF_WEEK.forEach(day => {
+        const masukInput = document.getElementById(`cfg-jam-${day}-masuk`);
+        const pulangInput = document.getElementById(`cfg-jam-${day}-pulang`);
+        if (masukInput && pulangInput) {
+          const daySpec = jamKerja[day] || (day === 'sabtu' ? legacySabtu : legacySj);
+          masukInput.value = (daySpec && daySpec.masuk) || '08.00';
+          pulangInput.value = (daySpec && daySpec.pulang) || (day === 'sabtu' ? '14.00' : '16.00');
+        }
+      });
 
       if (dom.cfgPeriodeMulai) dom.cfgPeriodeMulai.value = periode.tanggal_mulai || '2026-07-01';
       if (dom.cfgPeriodeSelesai) dom.cfgPeriodeSelesai.value = periode.tanggal_selesai || '2026-12-31';
@@ -211,6 +235,7 @@
       const hariKerja = pengaturan.hari_kerja || 'senin_sabtu';
       const radio = document.querySelector(`input[name="cfg-hari-kerja"][value="${hariKerja}"]`);
       if (radio) radio.checked = true;
+      toggleSaturdayRow(hariKerja);
 
       openModal(dom.modalConfig);
     } catch (err) {
@@ -227,6 +252,16 @@
       if (res.ok) existingCfg = await res.json();
     } catch (_) {}
 
+    const jamKerjaPayload = {};
+    DAYS_OF_WEEK.forEach(day => {
+      const masukInput = document.getElementById(`cfg-jam-${day}-masuk`);
+      const pulangInput = document.getElementById(`cfg-jam-${day}-pulang`);
+      jamKerjaPayload[day] = {
+        masuk: masukInput ? masukInput.value.trim() : '08.00',
+        pulang: pulangInput ? pulangInput.value.trim() : (day === 'sabtu' ? '14.00' : '16.00')
+      };
+    });
+
     const payload = {
       ...existingCfg,
       mahasiswa: {
@@ -237,17 +272,8 @@
         mitra: dom.cfgMhsMitra.value.trim(),
       },
       pembimbing: {
-        ...(existingCfg.pembimbing || {}),
-        dosen: {
-          ...((existingCfg.pembimbing && existingCfg.pembimbing.dosen) || {}),
-          nama: dom.cfgDosenNama.value.trim(),
-          nip: dom.cfgDosenNip.value.trim(),
-        },
-        lapangan: {
-          ...((existingCfg.pembimbing && existingCfg.pembimbing.lapangan) || {}),
-          nama: dom.cfgLapanganNama.value.trim(),
-          nik: dom.cfgLapanganNik.value.trim(),
-        },
+        dosen: { nama: dom.cfgDosenNama.value.trim() },
+        lapangan: { nama: dom.cfgLapanganNama.value.trim() }
       },
       periode: {
         ...(existingCfg.periode || {}),
@@ -257,10 +283,7 @@
       pengaturan: {
         ...(existingCfg.pengaturan || {}),
         hari_kerja: selectedHariKerja,
-        jam_kerja: (existingCfg.pengaturan && existingCfg.pengaturan.jam_kerja) || {
-          senin_jumat: { masuk: '08.00', pulang: '16.00' },
-          sabtu: { masuk: '08.00', pulang: '14.00' },
-        },
+        jam_kerja: jamKerjaPayload
       },
     };
 
@@ -596,6 +619,13 @@
       openModal(dom.modalPdf);
     });
     dom.btnTriggerCompile.addEventListener('click', compileAndPreviewPdf);
+
+    // Toggle Saturday row on schedule radio change
+    document.querySelectorAll('input[name="cfg-hari-kerja"]').forEach((radio) => {
+      radio.addEventListener('change', (e) => {
+        toggleSaturdayRow(e.target.value);
+      });
+    });
   }
 
   // Boot
