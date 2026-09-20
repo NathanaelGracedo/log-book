@@ -175,5 +175,74 @@ class TestCalendarUtils(unittest.TestCase):
         with self.assertRaises(ValueError):
             get_yaml_filename_for_date(datetime.date(2026, 7, 31), cfg)
 
+    def test_per_day_working_hours_resolution(self):
+        custom_config = {
+            "periode": {"tanggal_mulai": "2026-07-01", "tanggal_selesai": "2026-07-04"}, # Wed to Sat
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu",
+                "jam_kerja": {
+                    "senin": {"masuk": "08.00", "pulang": "16.00"},
+                    "selasa": {"masuk": "08.00", "pulang": "16.00"},
+                    "rabu": {"masuk": "07.30", "pulang": "15.30"},
+                    "kamis": {"masuk": "08.00", "pulang": "16.00"},
+                    "jumat": {"masuk": "08.00", "pulang": "11.30"},
+                    "sabtu": {"masuk": "08.30", "pulang": "13.00"},
+                }
+            }
+        }
+        weeks = get_internship_calendar(config=custom_config)
+        self.assertEqual(len(weeks), 1)
+        days = weeks[0]["days"]
+        # Wednesday (Rabu - 2026-07-01)
+        self.assertEqual(days[0]["hari"], "Rabu")
+        self.assertEqual(days[0]["jam_masuk"], "07.30")
+        self.assertEqual(days[0]["jam_pulang"], "15.30")
+        # Thursday (Kamis - 2026-07-02)
+        self.assertEqual(days[1]["hari"], "Kamis")
+        self.assertEqual(days[1]["jam_masuk"], "08.00")
+        self.assertEqual(days[1]["jam_pulang"], "16.00")
+        # Friday (Jumat - 2026-07-03)
+        self.assertEqual(days[2]["hari"], "Jumat")
+        self.assertEqual(days[2]["jam_masuk"], "08.00")
+        self.assertEqual(days[2]["jam_pulang"], "11.30")
+        # Saturday (Sabtu - 2026-07-04)
+        self.assertEqual(days[3]["hari"], "Sabtu")
+        self.assertEqual(days[3]["jam_masuk"], "08.30")
+        self.assertEqual(days[3]["jam_pulang"], "13.00")
+
+    def test_legacy_working_hours_fallback(self):
+        legacy_config = {
+            "periode": {"tanggal_mulai": "2026-07-01", "tanggal_selesai": "2026-07-04"},
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu",
+                "jam_kerja": {
+                    "senin_jumat": {"masuk": "08.15", "pulang": "16.45"},
+                    "sabtu": {"masuk": "08.30", "pulang": "13.30"},
+                }
+            }
+        }
+        weeks = get_internship_calendar(config=legacy_config)
+        days = weeks[0]["days"]
+        self.assertEqual(days[0]["jam_masuk"], "08.15")
+        self.assertEqual(days[0]["jam_pulang"], "16.45")
+        self.assertEqual(days[3]["jam_masuk"], "08.30")
+        self.assertEqual(days[3]["jam_pulang"], "13.30")
+
+    def test_missing_working_hours_defaults(self):
+        empty_config = {
+            "periode": {"tanggal_mulai": "2026-07-01", "tanggal_selesai": "2026-07-04"},
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu",
+                "jam_kerja": {}
+            }
+        }
+        weeks = get_internship_calendar(config=empty_config)
+        days = weeks[0]["days"]
+        self.assertEqual(days[0]["jam_masuk"], "08.00")
+        self.assertEqual(days[0]["jam_pulang"], "16.00")
+        self.assertEqual(days[3]["jam_masuk"], "08.00")
+        self.assertEqual(days[3]["jam_pulang"], "14.00")
+
 if __name__ == "__main__":
     unittest.main()
+

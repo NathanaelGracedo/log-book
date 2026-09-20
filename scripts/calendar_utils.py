@@ -7,6 +7,16 @@ INDONESIAN_DAYS: dict[int, str] = {
     0: "Senin", 1: "Selasa", 2: "Rabu", 3: "Kamis", 4: "Jumat", 5: "Sabtu", 6: "Minggu"
 }
 
+DAY_KEYS: dict[int, str] = {
+    0: "senin",
+    1: "selasa",
+    2: "rabu",
+    3: "kamis",
+    4: "jumat",
+    5: "sabtu"
+}
+
+
 INDONESIAN_MONTHS: dict[int, str] = {
     1: "Januari", 2: "Februari", 3: "Maret", 4: "April", 5: "Mei", 6: "Juni",
     7: "Juli", 8: "Agustus", 9: "September", 10: "Oktober", 11: "November", 12: "Desember"
@@ -86,16 +96,10 @@ def get_internship_calendar(
     curr = start_d
     week_num = 1
 
-    jam_senin_jumat_masuk = "08.00"
-    jam_senin_jumat_pulang = "16.00"
-    jam_sabtu_pulang = "14.00"
-    if config:
-        jam_cfg = (config.get("pengaturan") or {}).get("jam_kerja") or {}
-        sj = jam_cfg.get("senin_jumat") or {}
-        sabtu = jam_cfg.get("sabtu") or {}
-        jam_senin_jumat_masuk = sj.get("masuk") or "08.00"
-        jam_senin_jumat_pulang = sj.get("pulang") or "16.00"
-        jam_sabtu_pulang = sabtu.get("pulang") or "14.00"
+    jam_cfg = (config.get("pengaturan") or {}).get("jam_kerja") or {} if config else {}
+    # Legacy fallbacks
+    legacy_sj = jam_cfg.get("senin_jumat") or {}
+    legacy_sabtu = jam_cfg.get("sabtu") or {}
 
     while curr <= end_d:
         w_day = curr.weekday()
@@ -103,14 +107,25 @@ def get_internship_calendar(
 
         if work_days_mode == "senin_jumat" and w_day in range(0, 5):  # Mon-Fri
             is_active = True
-            jam_masuk = jam_senin_jumat_masuk
-            jam_pulang = jam_senin_jumat_pulang
         elif work_days_mode == "senin_sabtu" and w_day in range(0, 6):  # Mon-Sat
             is_active = True
-            jam_masuk = jam_senin_jumat_masuk
-            jam_pulang = jam_sabtu_pulang if w_day == 5 else jam_senin_jumat_pulang
 
         if is_active:
+            day_key = DAY_KEYS.get(w_day)
+            day_spec = jam_cfg.get(day_key) if isinstance(jam_cfg.get(day_key), dict) else None
+
+            if day_spec:
+                jam_masuk = day_spec.get("masuk") or "08.00"
+                jam_pulang = day_spec.get("pulang") or ("14.00" if w_day == 5 else "16.00")
+            else:
+                # Fallback to legacy structure or defaults
+                if w_day == 5:
+                    jam_masuk = legacy_sabtu.get("masuk") or legacy_sj.get("masuk") or "08.00"
+                    jam_pulang = legacy_sabtu.get("pulang") or "14.00"
+                else:
+                    jam_masuk = legacy_sj.get("masuk") or "08.00"
+                    jam_pulang = legacy_sj.get("pulang") or "16.00"
+
             current_days.append({
                 "date": curr,
                 "date_str": curr.strftime("%Y-%m-%d"),

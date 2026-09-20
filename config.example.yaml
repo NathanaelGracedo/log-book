@@ -18,17 +18,16 @@ periode:
 pengaturan:
   hari_kerja: "senin_sabtu" # Pilihan: "senin_jumat" (5 hari) atau "senin_sabtu" (6 hari)
   jam_kerja:
-    senin_jumat:
-      masuk: "08.00"
-      pulang: "16.00"
-    sabtu:
-      masuk: "08.00"
-      pulang: "14.00"
+    senin:  { masuk: "08.00", pulang: "16.00" }
+    selasa: { masuk: "08.00", pulang: "16.00" }
+    rabu:   { masuk: "08.00", pulang: "16.00" }
+    kamis:  { masuk: "08.00", pulang: "16.00" }
+    jumat:  { masuk: "08.00", pulang: "16.00" }
+    sabtu:  { masuk: "08.00", pulang: "14.00" }
 
 pembimbing:
   dosen:
     nama: "Nama Dosen Pembimbing, S.Kom., M.Kom."
-    nip: "198XXXXXXXXXXXXXXX"
   lapangan:
     nama: "Nama Pembimbing Lapangan / Mentor"
-    nik: "NIK / ID Karyawan"
+
