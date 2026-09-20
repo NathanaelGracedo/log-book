@@ -13,13 +13,14 @@ Aplikasi otomatisasi pengisian dan pembuatan berkas PDF **Log Book Kegiatan Prog
 1. **Format Resmi Presisi Tinggi (XeLaTeX) & Redesain Tanda Tangan 2-Tier**:
    - Layout kop surat resmi simetris dengan logo Polinema.
    - **Tata letak tanda tangan 2-tier**: Mahasiswa pada tingkat atas (kanan), diikuti *Mengetahui* dengan Dosen Pembimbing Polinema dan Pembimbing Lapangan / Mentor Industri pada tingkat bawah yang sejajar dan proporsional.
-   - Penghapusan label redundan `NIM.`, `NIP.`, dan `NIK.` pada blok tanda tangan sesuai format dokumen resmi.
+   - **Data Pembimbing Ringkas (Streamlined)**: Penghapusan label dan field redundan `NIM.`, `NIP.`, dan `NIK.` pada blok tanda tangan sesuai format dokumen resmi, sehingga hanya nama pembimbing yang diperlukan.
    - Kalibrasi layout ketat: **Tepat 1 minggu = 1 lembar A4**.
-2. **Periode Magang Dinamis & Jadwal Kerja Fleksibel**:
+2. **Periode Magang Dinamis & Jam Kerja Granular Per Hari**:
    - Rentang tanggal magang dinamis (`periode.tanggal_mulai` dan `periode.tanggal_selesai`), tidak terpaku pada rentang statis. Sistem otomatis menghitung bundle bulan dan penomoran minggu yang akurat.
+   - **Jam Kerja Fleksibel Per Hari (Per-Day)**: Mendukung konfigurasi jam masuk dan pulang kustom untuk masing-masing hari (`senin` s/d `sabtu`), memudahkan penyesuaian jadwal harian yang bervariasi (misalnya: hari Jumat pulang lebih awal atau Sabtu setengah hari). Tetap kompatibel dengan format legacy (`senin_jumat` dan `sabtu`).
    - Pilihan jadwal kerja (`pengaturan.hari_kerja`):
-     - **5 Hari Kerja (`senin_jumat`)**: Senin–Jumat aktif (08.00–16.00), Sabtu & Minggu libur.
-     - **6 Hari Kerja (`senin_sabtu`)**: Senin–Jumat (08.00–16.00) dan Sabtu (08.00–14.00), Minggu libur.
+     - **5 Hari Kerja (`senin_jumat`)**: Senin–Jumat aktif (default 08.00–16.00), Sabtu & Minggu libur.
+     - **6 Hari Kerja (`senin_sabtu`)**: Senin–Jumat (default 08.00–16.00) dan Sabtu (default 08.00–14.00), Minggu libur.
 3. **Dukungan Status Kehadiran (Attendance Status)**:
    - Mendukung 5 pilihan status presensi: **Hadir**, **Izin**, **Sakit**, **Cuti**, dan **Libur Nasional**.
    - Pengaturan jam kerja otomatis: Status non-hadir otomatis mengisi jam datang dan pulang dengan tanda strip (`-`).
@@ -83,8 +84,8 @@ python3 main.py --init
 Wizard akan menuntun Anda mengisikan:
 - Nama Mahasiswa, NIM, Program Studi, dan Tempat Magang.
 - Tanggal mulai dan tanggal selesai periode magang (`YYYY-MM-DD`).
-- Pilihan jadwal kerja: 5 hari (`senin_jumat`) atau 6 hari (`senin_sabtu`).
-- Data Dosen Pembimbing (Nama & NIP) serta Pembimbing Lapangan (Nama & NIK/ID).
+- Pilihan jadwal kerja: 5 hari (`senin_jumat`) atau 6 hari (`senin_sabtu`) beserta konfigurasi jam kerja per hari.
+- Data Dosen Pembimbing (Nama) serta Pembimbing Lapangan (Nama).
 
 #### Opsi B: Konfigurasi Manual
 ```bash
@@ -105,20 +106,18 @@ periode:
 pengaturan:
   hari_kerja: "senin_sabtu"      # Pilihan: "senin_jumat" (5 hari) atau "senin_sabtu" (6 hari)
   jam_kerja:
-    senin_jumat:
-      masuk: "08.00"
-      pulang: "16.00"
-    sabtu:
-      masuk: "08.00"
-      pulang: "14.00"
+    senin:  { masuk: "08.00", pulang: "16.00" }
+    selasa: { masuk: "08.00", pulang: "16.00" }
+    rabu:   { masuk: "08.00", pulang: "16.00" }
+    kamis:  { masuk: "08.00", pulang: "16.00" }
+    jumat:  { masuk: "08.00", pulang: "16.00" }
+    sabtu:  { masuk: "08.00", pulang: "14.00" }
 
 pembimbing:
   dosen:
     nama: "Nama Dosen Pembimbing, S.Kom., M.Kom."
-    nip: "198XXXXXXXXXXXXXXX"
   lapangan:
     nama: "Nama Pembimbing Lapangan / Mentor"
-    nik: "NIK / ID Karyawan"
 ```
 
 ---

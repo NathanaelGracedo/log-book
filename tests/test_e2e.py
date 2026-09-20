@@ -3,7 +3,10 @@ import os
 import sys
 import shutil
 import subprocess
+import tempfile
 from scripts.data_manager import load_all_notes
+from scripts.calendar_utils import get_internship_calendar
+from scripts.latex_builder import generate_latex_document, compile_pdf
 
 class TestEndToEndBuild(unittest.TestCase):
     def test_build_month_1(self):
@@ -82,6 +85,65 @@ class TestEndToEndBuild(unittest.TestCase):
         self.assertNotIn("nim.", out_text)
         self.assertNotIn("nip.", out_text)
         self.assertNotIn("nik.", out_text)
+
+    @unittest.skipIf(shutil.which("pdftotext") is None, "pdftotext not installed")
+    def test_build_with_per_day_working_hours(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            test_config = {
+                "mahasiswa": {
+                    "nama": "E2E Per Day Tester",
+                    "nim": "1234567890",
+                    "prodi": "D4 Teknik Informatika",
+                    "mitra": "PT Daily Tech"
+                },
+                "periode": {
+                    "tanggal_mulai": "2026-07-01",
+                    "tanggal_selesai": "2026-07-04"
+                },
+                "pengaturan": {
+                    "hari_kerja": "senin_sabtu",
+                    "jam_kerja": {
+                        "senin": {"masuk": "08.00", "pulang": "16.00"},
+                        "selasa": {"masuk": "08.00", "pulang": "16.00"},
+                        "rabu": {"masuk": "07.30", "pulang": "15.30"},
+                        "kamis": {"masuk": "08.00", "pulang": "16.00"},
+                        "jumat": {"masuk": "08.00", "pulang": "11.30"},
+                        "sabtu": {"masuk": "08.30", "pulang": "13.00"},
+                    }
+                },
+                "pembimbing": {
+                    "dosen": {"nama": "Dosen Harian, M.Kom."},
+                    "lapangan": {"nama": "Mentor Harian"}
+                }
+            }
+            notes_map = {
+                "2026-07-01": "Pengembangan modul per-hari",
+                "2026-07-02": "Testing integrasi jam kerja",
+                "2026-07-03": "Dokumentasi API per-hari",
+                "2026-07-04": "Evaluasi mingguan jam kerja",
+            }
+            weeks = get_internship_calendar(config=test_config)
+            out_pdf = os.path.join(tmp_dir, "test_per_day.pdf")
+            tex_content = generate_latex_document(weeks, notes_map, test_config)
+            compile_pdf(tex_content, out_pdf)
+
+            self.assertTrue(os.path.exists(out_pdf))
+            pdftotext_res = subprocess.run(
+                ["pdftotext", out_pdf, "-"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True
+            )
+            text = pdftotext_res.stdout
+            self.assertIn("07.30", text)
+            self.assertIn("15.30", text)
+            self.assertIn("11.30", text)
+            self.assertIn("13.00", text)
+            self.assertIn("Dosen Harian, M.Kom.", text)
+            self.assertIn("Mentor Harian", text)
+            self.assertNotIn("NIP.", text)
+            self.assertNotIn("NIK.", text)
 
 if __name__ == "__main__":
     unittest.main()
