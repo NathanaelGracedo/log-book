@@ -96,10 +96,14 @@ def get_internship_calendar(
     curr = start_d
     week_num = 1
 
-    jam_cfg = (config.get("pengaturan") or {}).get("jam_kerja") or {} if config else {}
+    jam_cfg = (config.get("pengaturan") or {}).get("jam_kerja") or {} if (config and isinstance(config, dict) and isinstance(config.get("pengaturan"), dict)) else {}
+    jam_cfg = jam_cfg if isinstance(jam_cfg, dict) else {}
     # Legacy fallbacks
-    legacy_sj = jam_cfg.get("senin_jumat") or {}
-    legacy_sabtu = jam_cfg.get("sabtu") or {}
+    legacy_sj = jam_cfg.get("senin_jumat")
+    legacy_sj = legacy_sj if isinstance(legacy_sj, dict) else {}
+
+    legacy_sabtu = jam_cfg.get("sabtu")
+    legacy_sabtu = legacy_sabtu if isinstance(legacy_sabtu, dict) else {}
 
     while curr <= end_d:
         w_day = curr.weekday()

@@ -243,6 +243,24 @@ class TestCalendarUtils(unittest.TestCase):
         self.assertEqual(days[3]["jam_masuk"], "08.00")
         self.assertEqual(days[3]["jam_pulang"], "14.00")
 
+    def test_malformed_scalar_legacy_working_hours_fallback(self):
+        malformed_config = {
+            "periode": {"tanggal_mulai": "2026-07-01", "tanggal_selesai": "2026-07-04"},
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu",
+                "jam_kerja": {
+                    "senin_jumat": "invalid",
+                    "sabtu": "invalid",
+                }
+            }
+        }
+        weeks = get_internship_calendar(config=malformed_config)
+        days = weeks[0]["days"]
+        self.assertEqual(days[0]["jam_masuk"], "08.00")
+        self.assertEqual(days[0]["jam_pulang"], "16.00")
+        self.assertEqual(days[3]["jam_masuk"], "08.00")
+        self.assertEqual(days[3]["jam_pulang"], "14.00")
+
 if __name__ == "__main__":
     unittest.main()
 
