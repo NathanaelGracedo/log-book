@@ -45,9 +45,7 @@ def render_week_page(
     mitra_mhs = escape_latex(mhs.get("mitra", "PT Naraya Telematika"))
 
     nama_dosen = escape_latex(dosen.get("nama", "...................................."))
-    nip_dosen = escape_latex(dosen.get("nip", "...................................."))
     nama_lapangan = escape_latex(lapangan.get("nama", "...................................."))
-    nik_lapangan = escape_latex(lapangan.get("nik", "...................................."))
 
     polinema_logo = os.path.abspath(os.path.join(resolved_assets, "polinema.png"))
     has_polinema = os.path.exists(polinema_logo)
@@ -109,8 +107,8 @@ Nama Mitra Industri & : & {mitra_mhs} \\
         raw_val = notes_map.get(d_str, "")
         
         if isinstance(raw_val, dict):
-            status = str(raw_val.get("status", "hadir")).strip().lower()
-            activity_text = str(raw_val.get("kegiatan", "")).strip()
+            status = str(raw_val.get("status") or "hadir").strip().lower()
+            activity_text = str(raw_val.get("kegiatan") or "").strip()
         else:
             status = "hadir"
             activity_text = str(raw_val).strip()

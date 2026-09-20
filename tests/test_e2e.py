@@ -64,7 +64,13 @@ class TestEndToEndBuild(unittest.TestCase):
         if not shutil.which("pdftotext"):
             self.skipTest("pdftotext not found")
 
-        pdftotext_res = subprocess.run(["pdftotext", pdf_path, "-"], stdout=subprocess.PIPE, text=True)
+        pdftotext_res = subprocess.run(
+            ["pdftotext", pdf_path, "-"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        self.assertEqual(pdftotext_res.returncode, 0, f"pdftotext failed: {pdftotext_res.stderr}")
         out_text = pdftotext_res.stdout.lower()
 
         # Invariant checks

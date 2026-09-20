@@ -158,8 +158,9 @@ def main():
 
     if args.ui:
         import uvicorn
+        config = load_config("config.yaml")
         ensure_assets()
-        init_data_files("data")
+        init_data_files("data", config)
         print(f"\n========================================================")
         print(f"🚀 Log Book Polinema Web Dashboard Berjalan!")
         print(f"📍 Akses di peramban web: http://{args.host}:{args.port}")

@@ -37,14 +37,14 @@ def parse_config_period(config: Optional[dict] = None) -> Tuple[datetime.date, d
     if not config:
         return DEFAULT_START_DATE, DEFAULT_END_DATE, "senin_sabtu"
 
-    periode = config.get("periode", {})
+    periode = (config.get("periode") or {})
     start_str = periode.get("tanggal_mulai")
     end_str = periode.get("tanggal_selesai")
 
     start_d = datetime.date.fromisoformat(str(start_str)) if start_str else DEFAULT_START_DATE
     end_d = datetime.date.fromisoformat(str(end_str)) if end_str else DEFAULT_END_DATE
 
-    hari_kerja = config.get("pengaturan", {}).get("hari_kerja", "senin_sabtu")
+    hari_kerja = (config.get("pengaturan") or {}).get("hari_kerja", "senin_sabtu")
     if hari_kerja not in ("senin_jumat", "senin_sabtu"):
         hari_kerja = "senin_sabtu"
 
@@ -89,11 +89,13 @@ def get_internship_calendar(
     jam_senin_jumat_masuk = "08.00"
     jam_senin_jumat_pulang = "16.00"
     jam_sabtu_pulang = "14.00"
-    if config and "pengaturan" in config:
-        jam_cfg = config["pengaturan"].get("jam_kerja", {})
-        jam_senin_jumat_masuk = jam_cfg.get("senin_jumat", {}).get("masuk", "08.00")
-        jam_senin_jumat_pulang = jam_cfg.get("senin_jumat", {}).get("pulang", "16.00")
-        jam_sabtu_pulang = jam_cfg.get("sabtu", {}).get("pulang", "14.00")
+    if config:
+        jam_cfg = (config.get("pengaturan") or {}).get("jam_kerja") or {}
+        sj = jam_cfg.get("senin_jumat") or {}
+        sabtu = jam_cfg.get("sabtu") or {}
+        jam_senin_jumat_masuk = sj.get("masuk") or "08.00"
+        jam_senin_jumat_pulang = sj.get("pulang") or "16.00"
+        jam_sabtu_pulang = sabtu.get("pulang") or "14.00"
 
     while curr <= end_d:
         w_day = curr.weekday()

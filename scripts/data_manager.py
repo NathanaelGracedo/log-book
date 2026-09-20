@@ -64,8 +64,8 @@ def load_all_notes(data_dir: str = "data", config: Optional[dict] = None) -> dic
                         k_str = k.strftime("%Y-%m-%d") if isinstance(k, (datetime.date, datetime.datetime)) else str(k)
                         if isinstance(v, dict):
                             merged_notes[k_str] = {
-                                "status": str(v.get("status", "hadir")).strip().lower(),
-                                "kegiatan": str(v.get("kegiatan", "")).strip()
+                                "status": str(v.get("status") or "hadir").strip().lower(),
+                                "kegiatan": str(v.get("kegiatan") or "").strip()
                             }
                         elif str(v).strip():
                             merged_notes[k_str] = str(v).strip()
@@ -102,8 +102,8 @@ def save_note_to_month(date_val: datetime.date, note: Any, data_dir: str = "data
         normalized_catatan[date_str] = note.strip()
     elif isinstance(note, dict):
         normalized_catatan[date_str] = {
-            "status": str(note.get("status", "hadir")).strip().lower(),
-            "kegiatan": str(note.get("kegiatan", "")).strip()
+            "status": str(note.get("status") or "hadir").strip().lower(),
+            "kegiatan": str(note.get("kegiatan") or "").strip()
         }
     else:
         normalized_catatan[date_str] = note

@@ -22,7 +22,7 @@ class TestCliUiFlag(unittest.TestCase):
                 main.main()
             self.assertEqual(cm.exception.code, 0)
             mock_assets.assert_called_once()
-            mock_init.assert_called_once_with("data")
+            mock_init.assert_called_once_with("data", main.load_config("config.yaml"))
             mock_uvicorn.assert_called_once_with("web.app:app", host="0.0.0.0", port=9000, reload=False)
 
 

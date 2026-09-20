@@ -90,8 +90,8 @@ def get_calendar() -> Dict[str, Any]:
             d_str = d["date_str"]
             raw_entry = notes_map.get(d_str, "")
             if isinstance(raw_entry, dict):
-                att_status = str(raw_entry.get("status", "hadir")).strip().lower() or "hadir"
-                kegiatan = str(raw_entry.get("kegiatan", "")).strip()
+                att_status = str(raw_entry.get("status") or "hadir").strip().lower() or "hadir"
+                kegiatan = str(raw_entry.get("kegiatan") or "").strip()
             else:
                 att_status = "hadir"
                 kegiatan = str(raw_entry).strip() if raw_entry else ""
