@@ -54,8 +54,9 @@ class BatchAutofillRequest(BaseModel):
 class GeneratePdfRequest(BaseModel):
     target: Any # 1..6 or "cumulative" or "all"
 
-# Ensure data directory is initialized
+# Ensure data directory and configuration are initialized
 init_data_files("data")
+load_config("config.yaml")
 
 static_dir = os.path.join(os.path.dirname(__file__), "static")
 os.makedirs(static_dir, exist_ok=True)

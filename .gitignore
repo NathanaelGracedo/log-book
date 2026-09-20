@@ -8,7 +8,10 @@ env/
 venv/
 .venv/
 
-# LaTeX
+# Local User Configuration & Data
+config.yaml
+
+# LaTeX Build Artifacts
 *.aux
 *.log
 *.out
@@ -17,7 +20,7 @@ venv/
 *.fdb_latexmk
 *.synctex.gz
 
-# Output
+# Output Generated PDFs
 output/
 
 # Superpowers SDD workspace

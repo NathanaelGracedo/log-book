@@ -1,0 +1,29 @@
+# ==============================================================================
+# KONFIGURASI PROFIL LOG BOOK MAGANG INDUSTRI JTI POLINEMA
+# ==============================================================================
+# Silakan lengkapi data diri Anda di bawah ini sebelum men-generate PDF.
+# File ini berfungsi sebagai template awal. Salin menjadi 'config.yaml'.
+# ==============================================================================
+
+mahasiswa:
+  nama: "Nama Lengkap Mahasiswa"
+  nim: "XXXXXXXXXX"
+  prodi: "Sarjana Terapan Teknik Informatika" # atau: Sarjana Terapan Sistem Informasi Bisnis
+  mitra: "Nama Perusahaan / Tempat Magang"
+
+pembimbing:
+  dosen:
+    nama: "Nama Dosen Pembimbing, S.Kom., M.Kom."
+    nip: "198XXXXXXXXXXXXXXX"
+  lapangan:
+    nama: "Nama Pembimbing Lapangan / Mentor"
+    nik: "NIK / ID Karyawan"
+
+pengaturan:
+  jam_kerja:
+    senin_jumat:
+      masuk: "08.00"
+      pulang: "16.00"
+    sabtu:
+      masuk: "08.00"
+      pulang: "14.00"

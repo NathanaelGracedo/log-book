@@ -8,6 +8,7 @@ narrative expansion, and XeLaTeX PDF compilation.
 
 import argparse
 import os
+import shutil
 import sys
 import yaml
 from scripts.extract_assets import extract_assets_from_docx
@@ -34,10 +35,26 @@ OUTPUT_MONTHLY_FILENAMES = {
 CUMULATIVE_FILENAME = "Logbook_Lengkap_Juli_Desember_2026.pdf"
 
 
-def load_config(config_path: str = "config.yaml") -> dict:
-    """Loads configuration YAML file."""
+def load_config(config_path: str = "config.yaml", example_path: str = "config.example.yaml") -> dict:
+    """
+    Loads configuration YAML file.
+    If config_path is missing, automatically bootstraps it from example_path.
+    """
     if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Konfigurasi {config_path} tidak ditemukan.")
+        should_bootstrap = (
+            example_path is not None
+            and (example_path != "config.example.yaml" or os.path.basename(config_path) in ("config.yaml", "config.yml"))
+        )
+        if should_bootstrap:
+            if os.path.exists(example_path):
+                print(f"[BOOTSTRAP] Berkas '{config_path}' tidak ditemukan. Menyalin template dari '{example_path}'...")
+                shutil.copyfile(example_path, config_path)
+                print(f"[BOOTSTRAP] Silakan sesuaikan data diri dan mitra pada '{config_path}' sesuai kebutuhan Anda.")
+            else:
+                raise FileNotFoundError(f"Konfigurasi '{config_path}' dan template '{example_path}' tidak ditemukan.")
+        else:
+            raise FileNotFoundError(f"Konfigurasi '{config_path}' tidak ditemukan.")
+
     with open(config_path, "r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
 
