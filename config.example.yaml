@@ -11,15 +11,12 @@ mahasiswa:
   prodi: "Sarjana Terapan Teknik Informatika" # atau: Sarjana Terapan Sistem Informasi Bisnis
   mitra: "Nama Perusahaan / Tempat Magang"
 
-pembimbing:
-  dosen:
-    nama: "Nama Dosen Pembimbing, S.Kom., M.Kom."
-    nip: "198XXXXXXXXXXXXXXX"
-  lapangan:
-    nama: "Nama Pembimbing Lapangan / Mentor"
-    nik: "NIK / ID Karyawan"
+periode:
+  tanggal_mulai: "2026-07-01"
+  tanggal_selesai: "2026-12-31"
 
 pengaturan:
+  hari_kerja: "senin_sabtu" # Pilihan: "senin_jumat" (5 hari) atau "senin_sabtu" (6 hari)
   jam_kerja:
     senin_jumat:
       masuk: "08.00"
@@ -27,3 +24,11 @@ pengaturan:
     sabtu:
       masuk: "08.00"
       pulang: "14.00"
+
+pembimbing:
+  dosen:
+    nama: "Nama Dosen Pembimbing, S.Kom., M.Kom."
+    nip: "198XXXXXXXXXXXXXXX"
+  lapangan:
+    nama: "Nama Pembimbing Lapangan / Mentor"
+    nik: "NIK / ID Karyawan"

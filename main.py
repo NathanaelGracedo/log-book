@@ -14,6 +14,7 @@ import yaml
 from scripts.extract_assets import extract_assets_from_docx
 from scripts.calendar_utils import (
     get_internship_calendar,
+    get_month_bundles,
     get_month_bundle_weeks,
 )
 from scripts.data_manager import (
@@ -34,6 +35,57 @@ OUTPUT_MONTHLY_FILENAMES = {
     6: "Logbook_06_Desember_2026.pdf",
 }
 CUMULATIVE_FILENAME = "Logbook_Lengkap_Juli_Desember_2026.pdf"
+
+
+def run_setup_wizard(config_path: str = "config.yaml") -> dict:
+    print("\n========================================================")
+    print("🪄 WIZARD KONFIGURASI LOG BOOK MAGANG POLINEMA")
+    print("========================================================\n")
+
+    nama = input("Nama Mahasiswa: ").strip() or "Nama Mahasiswa"
+    nim = input("NIM: ").strip() or "XXXXXXXXXX"
+    prodi = input("Program Studi [Sarjana Terapan Teknik Informatika]: ").strip() or "Sarjana Terapan Teknik Informatika"
+    mitra = input("Nama Mitra Industri: ").strip() or "Mitra Industri"
+
+    tgl_mulai = input("Tanggal Mulai Magang (YYYY-MM-DD) [2026-07-01]: ").strip() or "2026-07-01"
+    tgl_selesai = input("Tanggal Selesai Magang (YYYY-MM-DD) [2026-12-31]: ").strip() or "2026-12-31"
+
+    print("\nPilih Jadwal Kerja:")
+    print("  1. 5 Hari Kerja (Senin - Jumat)")
+    print("  2. 6 Hari Kerja (Senin - Sabtu)")
+    jadwal_opt = input("Pilihan [2]: ").strip() or "2"
+    hari_kerja = "senin_jumat" if jadwal_opt == "1" else "senin_sabtu"
+
+    nama_dosen = input("\nNama Dosen Pembimbing: ").strip() or ""
+    nip_dosen = input("NIP Dosen Pembimbing: ").strip() or ""
+    nama_lapangan = input("Nama Pembimbing Lapangan (Mentor): ").strip() or ""
+    nik_lapangan = input("NIK / ID Pembimbing Lapangan: ").strip() or ""
+
+    config = {
+        "mahasiswa": {"nama": nama, "nim": nim, "prodi": prodi, "mitra": mitra},
+        "periode": {"tanggal_mulai": tgl_mulai, "tanggal_selesai": tgl_selesai},
+        "pengaturan": {
+            "hari_kerja": hari_kerja,
+            "jam_kerja": {
+                "senin_jumat": {"masuk": "08.00", "pulang": "16.00"},
+                "sabtu": {"masuk": "08.00", "pulang": "14.00"}
+            }
+        },
+        "pembimbing": {
+            "dosen": {"nama": nama_dosen, "nip": nip_dosen},
+            "lapangan": {"nama": nama_lapangan, "nik": nik_lapangan}
+        }
+    }
+
+    dir_name = os.path.dirname(config_path)
+    if dir_name:
+        os.makedirs(dir_name, exist_ok=True)
+
+    with open(config_path, "w", encoding="utf-8") as f:
+        yaml.dump(config, f, allow_unicode=True, default_flow_style=False, sort_keys=False)
+
+    print(f"\n[OK] Konfigurasi berhasil disimpan ke '{config_path}'.\n")
+    return config
 
 
 def load_config(config_path: str = "config.yaml", example_path: str = "config.example.yaml") -> dict:
@@ -84,9 +136,10 @@ def build_pdf_bundle(weeks: list[dict], notes_map: dict[str, str], config: dict,
 
 def main():
     parser = argparse.ArgumentParser(description="Log Book Polinema Automation Generator")
+    parser.add_argument("--init", action="store_true", help="Jalankan wizard konfigurasi interaktif")
     group = parser.add_mutually_exclusive_group()
-    group.add_argument("-m", "--month", type=int, choices=range(1, 7), help="Pilih bulan ke-1 s/d 6 untuk digenerate")
-    group.add_argument("--all", action="store_true", help="Generate semua 6 bulan + 1 file kumulatif")
+    group.add_argument("-m", "--month", type=int, help="Pilih bulan untuk digenerate")
+    group.add_argument("--all", action="store_true", help="Generate semua bulan + 1 file kumulatif")
     group.add_argument("--cumulative-only", action="store_true", help="Hanya generate file PDF kumulatif")
     parser.add_argument("--check-only", action="store_true", help="Hanya cek tanggal kosong tanpa kompilasi PDF")
     parser.add_argument("--non-interactive", action="store_true", help="Nonaktifkan prompt interaktif untuk tanggal kosong")
@@ -94,6 +147,10 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help="Port server web UI (default: 8000)")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host server web UI (default: 127.0.0.1)")
     args = parser.parse_args()
+
+    if args.init:
+        run_setup_wizard("config.yaml")
+        sys.exit(0)
 
     # Pre-flight check: UI or PDF compilation requires xelatex unless --check-only is given
     if not args.check_only:
@@ -110,23 +167,29 @@ def main():
         uvicorn.run("web.app:app", host=args.host, port=args.port, reload=False)
         sys.exit(0)
 
-    ensure_assets()
-    init_data_files("data")
     config = load_config("config.yaml")
+    ensure_assets()
+    init_data_files("data", config=config)
+
+    bundles = get_month_bundles(config)
+    available_indices = [b["bundle_index"] for b in bundles]
+
+    if args.month is not None and args.month not in available_indices:
+        parser.error(f"argument -m/--month: invalid choice: {args.month} (pilihan yang tersedia: 1 s/d {len(available_indices)})")
 
     # Determine which target bundles to process
     if args.month:
-        target_months = [args.month]
+        target_bundles = [b for b in bundles if b["bundle_index"] == args.month]
     elif args.cumulative_only:
-        target_months = []
+        target_bundles = []
     else:
-        target_months = list(range(1, 7))
+        target_bundles = bundles
 
     # Check missing dates
     if args.cumulative_only or args.all or (not args.month):
-        missing = check_missing_dates(None, "data")
+        missing = check_missing_dates(None, "data", config=config)
     else:
-        missing = check_missing_dates(args.month, "data")
+        missing = check_missing_dates(args.month, "data", config=config)
 
     if missing:
         if args.non_interactive:
@@ -139,22 +202,29 @@ def main():
         sys.exit(0)
 
     # Reload notes after possible interactive fills
-    notes_map = load_all_notes("data")
+    notes_map = load_all_notes("data", config=config)
 
     generated = []
 
     # Build targeted monthly PDFs
     if not args.cumulative_only:
-        for m_idx in target_months:
-            weeks = get_month_bundle_weeks(m_idx)
-            out_name = OUTPUT_MONTHLY_FILENAMES[m_idx]
+        for bundle in target_bundles:
+            weeks = bundle["weeks"]
+            out_name = bundle["filename"]
             pdf_path = build_pdf_bundle(weeks, notes_map, config, out_name)
             generated.append(pdf_path)
 
     # Build cumulative PDF if requested
     if args.all or args.cumulative_only:
-        all_weeks = get_internship_calendar()
-        pdf_path = build_pdf_bundle(all_weeks, notes_map, config, CUMULATIVE_FILENAME)
+        all_weeks = get_internship_calendar(config)
+        if bundles:
+            start_m = bundles[0]["month_name"]
+            end_m = bundles[-1]["month_name"]
+            end_yr = bundles[-1]["year"]
+            cumulative_name = f"Logbook_Lengkap_{start_m}_{end_m}_{end_yr}.pdf" if start_m != end_m else f"Logbook_Lengkap_{start_m}_{end_yr}.pdf"
+        else:
+            cumulative_name = CUMULATIVE_FILENAME
+        pdf_path = build_pdf_bundle(all_weeks, notes_map, config, cumulative_name)
         generated.append(pdf_path)
 
     print("\n[SELESAI] Ringkasan berkas PDF yang dihasilkan:")

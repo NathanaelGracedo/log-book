@@ -2,11 +2,13 @@ import unittest
 import os
 import sys
 import subprocess
+import tempfile
 from unittest.mock import patch
 from main import (
     load_config,
     ensure_assets,
     build_pdf_bundle,
+    run_setup_wizard,
     OUTPUT_MONTHLY_FILENAMES,
     CUMULATIVE_FILENAME,
 )
@@ -21,6 +23,7 @@ class TestMainCLI(unittest.TestCase):
         self.assertIn("--all", res.stdout)
         self.assertIn("--cumulative-only", res.stdout)
         self.assertIn("--non-interactive", res.stdout)
+        self.assertIn("--init", res.stdout)
 
     def test_check_only_flag(self):
         res = subprocess.run(
@@ -109,6 +112,94 @@ class TestMainCLI(unittest.TestCase):
         self.assertEqual(OUTPUT_MONTHLY_FILENAMES[1], "Logbook_01_Juli_2026.pdf")
         self.assertEqual(OUTPUT_MONTHLY_FILENAMES[6], "Logbook_06_Desember_2026.pdf")
         self.assertEqual(CUMULATIVE_FILENAME, "Logbook_Lengkap_Juli_Desember_2026.pdf")
+
+    @patch("builtins.input")
+    def test_run_setup_wizard(self, mock_input):
+        mock_input.side_effect = [
+            "Ahmad Fauzi",
+            "2241720005",
+            "Sarjana Terapan Teknik Informatika",
+            "PT Digital Inovasi",
+            "2026-08-01",
+            "2026-11-30",
+            "1", # 5 hari
+            "Dr. Dosen, M.Kom.",
+            "19850101",
+            "Budi Santoso",
+            "EMP-01"
+        ]
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            cfg_path = os.path.join(tmp_dir, "test_wizard_config.yaml")
+            cfg = run_setup_wizard(cfg_path)
+            self.assertEqual(cfg["mahasiswa"]["nama"], "Ahmad Fauzi")
+            self.assertEqual(cfg["periode"]["tanggal_mulai"], "2026-08-01")
+            self.assertEqual(cfg["periode"]["tanggal_selesai"], "2026-11-30")
+            self.assertEqual(cfg["pengaturan"]["hari_kerja"], "senin_jumat")
+            self.assertEqual(cfg["pembimbing"]["dosen"]["nama"], "Dr. Dosen, M.Kom.")
+            self.assertEqual(cfg["pembimbing"]["lapangan"]["nama"], "Budi Santoso")
+            self.assertTrue(os.path.exists(cfg_path))
+
+    @patch("builtins.input")
+    def test_run_setup_wizard_defaults(self, mock_input):
+        mock_input.side_effect = [
+            "", # nama
+            "", # nim
+            "", # prodi
+            "", # mitra
+            "", # tgl_mulai
+            "", # tgl_selesai
+            "", # jadwal
+            "", # dosen
+            "", # nip
+            "", # mentor
+            ""  # nik
+        ]
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            cfg_path = os.path.join(tmp_dir, "test_wizard_default.yaml")
+            cfg = run_setup_wizard(cfg_path)
+            self.assertEqual(cfg["mahasiswa"]["nama"], "Nama Mahasiswa")
+            self.assertEqual(cfg["mahasiswa"]["nim"], "XXXXXXXXXX")
+            self.assertEqual(cfg["periode"]["tanggal_mulai"], "2026-07-01")
+            self.assertEqual(cfg["periode"]["tanggal_selesai"], "2026-12-31")
+            self.assertEqual(cfg["pengaturan"]["hari_kerja"], "senin_sabtu")
+            self.assertTrue(os.path.exists(cfg_path))
+
+    @patch("main.run_setup_wizard")
+    def test_cli_init_flag(self, mock_wizard):
+        with patch.object(sys, "argv", ["main.py", "--init"]):
+            with self.assertRaises(SystemExit) as cm:
+                from main import main
+                main()
+            self.assertEqual(cm.exception.code, 0)
+            mock_wizard.assert_called_once_with("config.yaml")
+
+    @patch("main.init_data_files")
+    @patch("main.check_missing_dates")
+    @patch("main.load_all_notes")
+    @patch("main.build_pdf_bundle")
+    @patch("main.load_config")
+    @patch("main.run_doctor")
+    def test_dynamic_build_pipeline(self, mock_doctor, mock_load_config, mock_build_pdf, mock_load_notes, mock_check_missing, mock_init_files):
+        # Configure a 3-month period: August to October 2026
+        mock_load_config.return_value = {
+            "mahasiswa": {"nama": "Test Mahasiswa", "nim": "12345", "prodi": "TI", "mitra": "Mitra"},
+            "periode": {"tanggal_mulai": "2026-08-01", "tanggal_selesai": "2026-10-31"},
+            "pengaturan": {"hari_kerja": "senin_jumat"}
+        }
+        mock_check_missing.return_value = []
+        mock_load_notes.return_value = {}
+        mock_build_pdf.return_value = "output/dummy.pdf"
+        with patch.object(sys, "argv", ["main.py", "--all", "--non-interactive"]):
+            from main import main
+            main()
+
+        # 3 monthly PDFs + 1 cumulative PDF = 4 calls
+        self.assertEqual(mock_build_pdf.call_count, 4)
+        out_names = [call[0][3] for call in mock_build_pdf.call_args_list]
+        self.assertEqual(out_names[0], "Logbook_01_Agustus_2026.pdf")
+        self.assertEqual(out_names[1], "Logbook_02_September_2026.pdf")
+        self.assertEqual(out_names[2], "Logbook_03_Oktober_2026.pdf")
+        self.assertEqual(out_names[3], "Logbook_Lengkap_Agustus_Oktober_2026.pdf")
 
 
 if __name__ == "__main__":
