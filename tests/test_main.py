@@ -123,10 +123,9 @@ class TestMainCLI(unittest.TestCase):
             "2026-08-01",
             "2026-11-30",
             "1", # 5 hari
+            "Y", # Jam kerja default
             "Dr. Dosen, M.Kom.",
-            "19850101",
-            "Budi Santoso",
-            "EMP-01"
+            "Budi Santoso"
         ]
         with tempfile.TemporaryDirectory() as tmp_dir:
             cfg_path = os.path.join(tmp_dir, "test_wizard_config.yaml")
@@ -135,8 +134,14 @@ class TestMainCLI(unittest.TestCase):
             self.assertEqual(cfg["periode"]["tanggal_mulai"], "2026-08-01")
             self.assertEqual(cfg["periode"]["tanggal_selesai"], "2026-11-30")
             self.assertEqual(cfg["pengaturan"]["hari_kerja"], "senin_jumat")
-            self.assertEqual(cfg["pembimbing"]["dosen"]["nama"], "Dr. Dosen, M.Kom.")
-            self.assertEqual(cfg["pembimbing"]["lapangan"]["nama"], "Budi Santoso")
+            self.assertIn("senin", cfg["pengaturan"]["jam_kerja"])
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["senin"]["masuk"], "08.00")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["senin"]["pulang"], "16.00")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["sabtu"]["pulang"], "14.00")
+            self.assertEqual(cfg["pembimbing"]["dosen"], {"nama": "Dr. Dosen, M.Kom."})
+            self.assertEqual(cfg["pembimbing"]["lapangan"], {"nama": "Budi Santoso"})
+            self.assertNotIn("nip", cfg["pembimbing"]["dosen"])
+            self.assertNotIn("nik", cfg["pembimbing"]["lapangan"])
             self.assertTrue(os.path.exists(cfg_path))
 
     @patch("builtins.input")
@@ -149,10 +154,9 @@ class TestMainCLI(unittest.TestCase):
             "", # tgl_mulai
             "", # tgl_selesai
             "", # jadwal
+            "", # jam kerja default (Enter = Y)
             "", # dosen
-            "", # nip
-            "", # mentor
-            ""  # nik
+            ""  # mentor
         ]
         with tempfile.TemporaryDirectory() as tmp_dir:
             cfg_path = os.path.join(tmp_dir, "test_wizard_default.yaml")
@@ -162,6 +166,39 @@ class TestMainCLI(unittest.TestCase):
             self.assertEqual(cfg["periode"]["tanggal_mulai"], "2026-07-01")
             self.assertEqual(cfg["periode"]["tanggal_selesai"], "2026-12-31")
             self.assertEqual(cfg["pengaturan"]["hari_kerja"], "senin_sabtu")
+            self.assertEqual(cfg["pembimbing"]["dosen"], {"nama": ""})
+            self.assertEqual(cfg["pembimbing"]["lapangan"], {"nama": ""})
+            self.assertNotIn("nip", cfg["pembimbing"]["dosen"])
+            self.assertNotIn("nik", cfg["pembimbing"]["lapangan"])
+            self.assertTrue(os.path.exists(cfg_path))
+
+    @patch("builtins.input")
+    def test_run_setup_wizard_custom_hours(self, mock_input):
+        mock_input.side_effect = [
+            "Ahmad Fauzi",
+            "2241720005",
+            "Sarjana Terapan Teknik Informatika",
+            "PT Digital Inovasi",
+            "2026-08-01",
+            "2026-11-30",
+            "2", # 6 hari
+            "n", # Custom jam kerja
+            "07.30", # Masuk Senin-Jumat
+            "16.30", # Pulang Senin-Jumat
+            "08.00", # Masuk Sabtu
+            "13.00", # Pulang Sabtu
+            "Dr. Dosen, M.Kom.",
+            "Budi Santoso"
+        ]
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            cfg_path = os.path.join(tmp_dir, "test_wizard_custom.yaml")
+            cfg = run_setup_wizard(cfg_path)
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["senin"]["masuk"], "07.30")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["senin"]["pulang"], "16.30")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["jumat"]["masuk"], "07.30")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["jumat"]["pulang"], "16.30")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["sabtu"]["masuk"], "08.00")
+            self.assertEqual(cfg["pengaturan"]["jam_kerja"]["sabtu"]["pulang"], "13.00")
             self.assertTrue(os.path.exists(cfg_path))
 
     @patch("main.run_setup_wizard")

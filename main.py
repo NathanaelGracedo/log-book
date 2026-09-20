@@ -56,25 +56,43 @@ def run_setup_wizard(config_path: str = "config.yaml") -> dict:
     jadwal_opt = input("Pilihan [2]: ").strip() or "2"
     hari_kerja = "senin_jumat" if jadwal_opt == "1" else "senin_sabtu"
 
+    print("\nKonfigurasi Jam Kerja:")
+    print("  Default: Senin-Jumat 08.00-16.00, Sabtu 08.00-14.00")
+    use_default_hours = input("Gunakan jam kerja default? (Y/n) [Y]: ").strip().lower()
+    if use_default_hours == "n":
+        jam_masuk_week = input("  Jam Masuk (Senin - Jumat) [08.00]: ").strip() or "08.00"
+        jam_pulang_week = input("  Jam Pulang (Senin - Jumat) [16.00]: ").strip() or "16.00"
+        jam_masuk_sat = input("  Jam Masuk (Sabtu) [08.00]: ").strip() or "08.00"
+        jam_pulang_sat = input("  Jam Pulang (Sabtu) [14.00]: ").strip() or "14.00"
+    else:
+        jam_masuk_week = "08.00"
+        jam_pulang_week = "16.00"
+        jam_masuk_sat = "08.00"
+        jam_pulang_sat = "14.00"
+
+    jam_kerja = {
+        "senin": {"masuk": jam_masuk_week, "pulang": jam_pulang_week},
+        "selasa": {"masuk": jam_masuk_week, "pulang": jam_pulang_week},
+        "rabu": {"masuk": jam_masuk_week, "pulang": jam_pulang_week},
+        "kamis": {"masuk": jam_masuk_week, "pulang": jam_pulang_week},
+        "jumat": {"masuk": jam_masuk_week, "pulang": jam_pulang_week},
+        "sabtu": {"masuk": jam_masuk_sat, "pulang": jam_pulang_sat},
+    }
+
     nama_dosen = input("\nNama Dosen Pembimbing: ").strip() or ""
-    nip_dosen = input("NIP Dosen Pembimbing: ").strip() or ""
     nama_lapangan = input("Nama Pembimbing Lapangan (Mentor): ").strip() or ""
-    nik_lapangan = input("NIK / ID Pembimbing Lapangan: ").strip() or ""
 
     config = {
         "mahasiswa": {"nama": nama, "nim": nim, "prodi": prodi, "mitra": mitra},
         "periode": {"tanggal_mulai": tgl_mulai, "tanggal_selesai": tgl_selesai},
         "pengaturan": {
             "hari_kerja": hari_kerja,
-            "jam_kerja": {
-                "senin_jumat": {"masuk": "08.00", "pulang": "16.00"},
-                "sabtu": {"masuk": "08.00", "pulang": "14.00"}
-            }
+            "jam_kerja": jam_kerja,
         },
         "pembimbing": {
-            "dosen": {"nama": nama_dosen, "nip": nip_dosen},
-            "lapangan": {"nama": nama_lapangan, "nik": nik_lapangan}
-        }
+            "dosen": {"nama": nama_dosen},
+            "lapangan": {"nama": nama_lapangan},
+        },
     }
 
     dir_name = os.path.dirname(config_path)
