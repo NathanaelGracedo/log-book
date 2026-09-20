@@ -3,6 +3,7 @@ import datetime
 from scripts.calendar_utils import (
     get_internship_calendar,
     get_calendar_working_days,
+    get_month_bundles,
     get_month_bundle_weeks,
     get_yaml_filename_for_date,
     MONTH_BUNDLE_WEEKS,
@@ -102,6 +103,77 @@ class TestCalendarUtils(unittest.TestCase):
     def test_format_indonesian_date(self):
         self.assertEqual(format_indonesian_date(datetime.date(2026, 7, 1)), "1 Juli 2026")
         self.assertEqual(format_indonesian_date(datetime.date(2026, 12, 31)), "31 Desember 2026")
+
+    def test_dynamic_calendar_custom_range_and_five_day_schedule(self):
+        cfg = {
+            "periode": {
+                "tanggal_mulai": "2026-08-03",
+                "tanggal_selesai": "2026-09-11"
+            },
+            "pengaturan": {
+                "hari_kerja": "senin_jumat"
+            }
+        }
+        weeks = get_internship_calendar(cfg)
+        self.assertTrue(len(weeks) > 0)
+        # Verify no Saturday in any week
+        for w in weeks:
+            for d in w["days"]:
+                self.assertNotEqual(d["hari"], "Sabtu")
+                self.assertNotEqual(d["hari"], "Minggu")
+                self.assertIn(d["jam_pulang"], ["16.00"])
+
+    def test_dynamic_month_bundles(self):
+        cfg = {
+            "periode": {
+                "tanggal_mulai": "2026-08-01",
+                "tanggal_selesai": "2026-10-31"
+            },
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu"
+            }
+        }
+        bundles = get_month_bundles(cfg)
+        self.assertEqual(len(bundles), 3) # Agustus, September, Oktober
+        self.assertEqual(bundles[0]["month_name"], "Agustus")
+        self.assertEqual(bundles[1]["month_name"], "September")
+        self.assertEqual(bundles[2]["month_name"], "Oktober")
+        self.assertEqual(bundles[0]["filename"], "Logbook_01_Agustus_2026.pdf")
+
+    def test_get_month_bundle_weeks_with_config(self):
+        cfg = {
+            "periode": {
+                "tanggal_mulai": "2026-08-01",
+                "tanggal_selesai": "2026-10-31"
+            },
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu"
+            }
+        }
+        weeks_b1 = get_month_bundle_weeks(1, cfg)
+        self.assertTrue(len(weeks_b1) > 0)
+        self.assertEqual(weeks_b1[0]["minggu_ke"], 1)
+
+        # Non-existent bundle index raises ValueError
+        with self.assertRaises(ValueError):
+            get_month_bundle_weeks(4, cfg)
+
+    def test_get_yaml_filename_for_date_with_config(self):
+        cfg = {
+            "periode": {
+                "tanggal_mulai": "2026-08-01",
+                "tanggal_selesai": "2026-10-31"
+            },
+            "pengaturan": {
+                "hari_kerja": "senin_sabtu"
+            }
+        }
+        self.assertEqual(get_yaml_filename_for_date(datetime.date(2026, 8, 15), cfg), "bulan_01_agustus.yaml")
+        self.assertEqual(get_yaml_filename_for_date(datetime.date(2026, 9, 15), cfg), "bulan_02_september.yaml")
+        self.assertEqual(get_yaml_filename_for_date(datetime.date(2026, 10, 15), cfg), "bulan_03_oktober.yaml")
+
+        with self.assertRaises(ValueError):
+            get_yaml_filename_for_date(datetime.date(2026, 7, 31), cfg)
 
 if __name__ == "__main__":
     unittest.main()
