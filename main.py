@@ -23,6 +23,7 @@ from scripts.data_manager import (
     prompt_fill_missing,
 )
 from scripts.latex_builder import generate_latex_document, compile_pdf
+from scripts.doctor import run_doctor
 
 OUTPUT_MONTHLY_FILENAMES = {
     1: "Logbook_01_Juli_2026.pdf",
@@ -93,6 +94,10 @@ def main():
     parser.add_argument("--port", type=int, default=8000, help="Port server web UI (default: 8000)")
     parser.add_argument("--host", type=str, default="127.0.0.1", help="Host server web UI (default: 127.0.0.1)")
     args = parser.parse_args()
+
+    # Pre-flight check: UI or PDF compilation requires xelatex unless --check-only is given
+    if not args.check_only:
+        run_doctor(exit_on_failure=True)
 
     if args.ui:
         import uvicorn
