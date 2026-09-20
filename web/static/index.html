@@ -100,16 +100,26 @@
         </div>
         <div class="modal-body">
           <div class="form-group">
+            <label for="editor-status" class="form-label">Status Kehadiran</label>
+            <select id="editor-status" class="form-select">
+              <option value="hadir">Hadir (Bekerja Normal)</option>
+              <option value="izin">Izin</option>
+              <option value="sakit">Sakit</option>
+              <option value="cuti">Cuti</option>
+              <option value="libur">Libur Nasional</option>
+            </select>
+          </div>
+          <div class="form-group" id="editor-hours-group">
             <div class="hours-info-box">
               <span class="hours-label">Jam Kerja:</span>
               <strong id="editor-hours">08.00 - 16.00 WIB</strong>
             </div>
           </div>
           <div class="form-group">
-            <label for="editor-note" class="form-label">Catatan Kegiatan Harian:</label>
+            <label for="editor-note" class="form-label" id="editor-note-label">Catatan Kegiatan Harian:</label>
             <textarea id="editor-note" class="form-textarea" rows="4" placeholder="Ketik catatan kegiatan atau gunakan tombol bantuan di bawah..."></textarea>
           </div>
-          <div class="editor-assist-bar">
+          <div class="editor-assist-bar" id="editor-assist-bar">
             <button id="btn-formalize" class="btn btn-sm btn-outline-primary">
               <span>⚡ Formalize Narasi</span>
             </button>
@@ -217,6 +227,31 @@
               <div class="form-col">
                 <label class="form-label">NIK / ID Karyawan</label>
                 <input type="text" id="cfg-lapangan-nik" class="form-input" required>
+              </div>
+            </div>
+
+            <h4 class="section-title">Periode & Jadwal Magang</h4>
+            <div class="form-row">
+              <div class="form-col">
+                <label for="cfg-periode-mulai" class="form-label">Tanggal Mulai Magang</label>
+                <input type="date" id="cfg-periode-mulai" class="form-input" required>
+              </div>
+              <div class="form-col">
+                <label for="cfg-periode-selesai" class="form-label">Tanggal Selesai Magang</label>
+                <input type="date" id="cfg-periode-selesai" class="form-input" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Jadwal Hari Kerja</label>
+              <div class="radio-group">
+                <label class="radio-label">
+                  <input type="radio" name="cfg-hari-kerja" value="senin_sabtu" checked>
+                  <span>6 Hari Kerja (Senin - Sabtu)</span>
+                </label>
+                <label class="radio-label">
+                  <input type="radio" name="cfg-hari-kerja" value="senin_jumat">
+                  <span>5 Hari Kerja (Senin - Jumat)</span>
+                </label>
               </div>
             </div>
           </form>

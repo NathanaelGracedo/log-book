@@ -7,12 +7,20 @@
 (function () {
   'use strict';
 
+  // Constants
+  const STATUS_BADGES = {
+    izin: 'badge-izin',
+    sakit: 'badge-sakit',
+    cuti: 'badge-cuti',
+    libur: 'badge-libur',
+  };
+
   // State
   const state = {
     calendar: null,
-    activeMonth: 'all',     // 'all' or 1..6
+    activeMonth: 'all',     // 'all' or month_index (1..N)
     activeFilter: 'all',    // 'all', 'missing', 'filled'
-    activeEditingDay: null, // { date, hari, tanggal_str, jam_masuk, jam_pulang, note }
+    activeEditingDay: null, // { date, hari, tanggal_str, jam_masuk, jam_pulang, note, status }
     theme: localStorage.getItem('logbook_theme') || 'light',
   };
 
@@ -34,8 +42,12 @@
     modalEditor: document.getElementById('modal-editor'),
     editorHariBadge: document.getElementById('editor-hari-badge'),
     editorTanggalTitle: document.getElementById('editor-tanggal-title'),
+    editorStatus: document.getElementById('editor-status'),
+    editorHoursGroup: document.getElementById('editor-hours-group'),
     editorHours: document.getElementById('editor-hours'),
+    editorNoteLabel: document.getElementById('editor-note-label'),
     editorNote: document.getElementById('editor-note'),
+    editorAssistBar: document.getElementById('editor-assist-bar'),
     btnFormalize: document.getElementById('btn-formalize'),
     btnSuggestTask: document.getElementById('btn-suggest-task'),
     btnSaveNote: document.getElementById('btn-save-note'),
@@ -56,6 +68,8 @@
     cfgDosenNip: document.getElementById('cfg-dosen-nip'),
     cfgLapanganNama: document.getElementById('cfg-lapangan-nama'),
     cfgLapanganNik: document.getElementById('cfg-lapangan-nik'),
+    cfgPeriodeMulai: document.getElementById('cfg-periode-mulai'),
+    cfgPeriodeSelesai: document.getElementById('cfg-periode-selesai'),
   };
 
   // Utilities
@@ -94,18 +108,20 @@
       const res = await fetch('/api/calendar');
       if (!res.ok) throw new Error('Gagal memuat kalender');
       state.calendar = await res.json();
+      renderMonthTabs();
+      renderPdfOptions();
       renderApp();
     } catch (err) {
       showToast(err.message, 'error');
     }
   }
 
-  async function saveDayNote(dateStr, noteText) {
+  async function saveDayNote(dateStr, noteText, status = 'hadir') {
     try {
       const res = await fetch('/api/save-day', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ date: dateStr, note: noteText }),
+        body: JSON.stringify({ date: dateStr, note: noteText, status: status }),
       });
       if (!res.ok) throw new Error('Gagal menyimpan catatan');
       showToast(`Catatan untuk ${dateStr} berhasil disimpan`, 'success');
@@ -177,6 +193,8 @@
       const mhs = cfg.mahasiswa || {};
       const dosen = (cfg.pembimbing && cfg.pembimbing.dosen) || {};
       const lapangan = (cfg.pembimbing && cfg.pembimbing.lapangan) || {};
+      const periode = cfg.periode || {};
+      const pengaturan = cfg.pengaturan || {};
 
       dom.cfgMhsNama.value = mhs.nama || '';
       dom.cfgMhsNim.value = mhs.nim || '';
@@ -187,6 +205,13 @@
       dom.cfgLapanganNama.value = lapangan.nama || '';
       dom.cfgLapanganNik.value = lapangan.nik || '';
 
+      if (dom.cfgPeriodeMulai) dom.cfgPeriodeMulai.value = periode.tanggal_mulai || '2026-07-01';
+      if (dom.cfgPeriodeSelesai) dom.cfgPeriodeSelesai.value = periode.tanggal_selesai || '2026-12-31';
+
+      const hariKerja = pengaturan.hari_kerja || 'senin_sabtu';
+      const radio = document.querySelector(`input[name="cfg-hari-kerja"][value="${hariKerja}"]`);
+      if (radio) radio.checked = true;
+
       openModal(dom.modalConfig);
     } catch (err) {
       showToast(err.message, 'error');
@@ -194,25 +219,45 @@
   }
 
   async function saveConfigData() {
+    const selectedHariKerja = document.querySelector('input[name="cfg-hari-kerja"]:checked')?.value || 'senin_sabtu';
+
+    let existingCfg = {};
+    try {
+      const res = await fetch('/api/config');
+      if (res.ok) existingCfg = await res.json();
+    } catch (_) {}
+
     const payload = {
+      ...existingCfg,
       mahasiswa: {
+        ...(existingCfg.mahasiswa || {}),
         nama: dom.cfgMhsNama.value.trim(),
         nim: dom.cfgMhsNim.value.trim(),
         prodi: dom.cfgMhsProdi.value.trim(),
         mitra: dom.cfgMhsMitra.value.trim(),
       },
       pembimbing: {
+        ...(existingCfg.pembimbing || {}),
         dosen: {
+          ...((existingCfg.pembimbing && existingCfg.pembimbing.dosen) || {}),
           nama: dom.cfgDosenNama.value.trim(),
           nip: dom.cfgDosenNip.value.trim(),
         },
         lapangan: {
+          ...((existingCfg.pembimbing && existingCfg.pembimbing.lapangan) || {}),
           nama: dom.cfgLapanganNama.value.trim(),
           nik: dom.cfgLapanganNik.value.trim(),
         },
       },
+      periode: {
+        ...(existingCfg.periode || {}),
+        tanggal_mulai: dom.cfgPeriodeMulai ? dom.cfgPeriodeMulai.value : '2026-07-01',
+        tanggal_selesai: dom.cfgPeriodeSelesai ? dom.cfgPeriodeSelesai.value : '2026-12-31',
+      },
       pengaturan: {
-        jam_kerja: {
+        ...(existingCfg.pengaturan || {}),
+        hari_kerja: selectedHariKerja,
+        jam_kerja: (existingCfg.pengaturan && existingCfg.pengaturan.jam_kerja) || {
           senin_jumat: { masuk: '08.00', pulang: '16.00' },
           sabtu: { masuk: '08.00', pulang: '14.00' },
         },
@@ -228,6 +273,7 @@
       if (!res.ok) throw new Error('Gagal memperbarui konfigurasi');
       showToast('Konfigurasi profil berhasil diperbarui', 'success');
       closeModal(dom.modalConfig);
+      await fetchCalendar();
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -261,20 +307,118 @@
 
   // Modals Control
   function openModal(modal) {
-    modal.classList.remove('hidden');
+    if (modal) modal.classList.remove('hidden');
   }
 
   function closeModal(modal) {
-    modal.classList.add('hidden');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  function updateEditorStatusUI(status) {
+    const isHadir = status === 'hadir';
+    if (isHadir) {
+      if (dom.editorHoursGroup) dom.editorHoursGroup.style.opacity = '1';
+      if (state.activeEditingDay) {
+        dom.editorHours.innerText = `${state.activeEditingDay.jam_masuk} - ${state.activeEditingDay.jam_pulang} WIB`;
+      }
+      if (dom.editorAssistBar) dom.editorAssistBar.style.display = 'flex';
+      dom.btnFormalize.disabled = false;
+      dom.btnSuggestTask.disabled = false;
+      if (dom.editorNoteLabel) dom.editorNoteLabel.innerText = 'Catatan Kegiatan Harian:';
+      dom.editorNote.placeholder = 'Ketik catatan kegiatan atau gunakan tombol bantuan di bawah...';
+    } else {
+      if (dom.editorHoursGroup) dom.editorHoursGroup.style.opacity = '0.5';
+      const label = status ? status.toUpperCase() : 'NON-HADIR';
+      dom.editorHours.innerText = `Tidak ada jam kerja (${label})`;
+      if (dom.editorAssistBar) dom.editorAssistBar.style.display = 'none';
+      dom.btnFormalize.disabled = true;
+      dom.btnSuggestTask.disabled = true;
+      if (dom.editorNoteLabel) dom.editorNoteLabel.innerText = `Keterangan ${label} (Opsional):`;
+      dom.editorNote.placeholder = `Keterangan atau alasan ${status} (opsional)...`;
+    }
   }
 
   function openEditor(day) {
     state.activeEditingDay = day;
+    const currentStatus = (day.status || day.attendance_status || 'hadir').toLowerCase();
+    if (dom.editorStatus) dom.editorStatus.value = currentStatus;
     dom.editorHariBadge.innerText = day.hari;
     dom.editorTanggalTitle.innerText = day.tanggal_str;
-    dom.editorHours.innerText = `${day.jam_masuk} - ${day.jam_pulang} WIB`;
-    dom.editorNote.value = day.note || '';
+    dom.editorNote.value = day.note || day.kegiatan || '';
+    updateEditorStatusUI(currentStatus);
     openModal(dom.modalEditor);
+  }
+
+  // Dynamic Navigation & Selects
+  function renderMonthTabs() {
+    if (!state.calendar || !state.calendar.months || !dom.monthTabs) return;
+    dom.monthTabs.innerHTML = '';
+
+    const allBtn = document.createElement('button');
+    allBtn.className = `tab-btn ${state.activeMonth === 'all' ? 'active' : ''}`;
+    allBtn.setAttribute('data-month', 'all');
+    allBtn.textContent = 'Semua Bulan';
+    allBtn.addEventListener('click', () => {
+      dom.monthTabs.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+      allBtn.classList.add('active');
+      state.activeMonth = 'all';
+      renderApp();
+    });
+    dom.monthTabs.appendChild(allBtn);
+
+    const validIndices = ['all'];
+    state.calendar.months.forEach((m) => {
+      validIndices.push(String(m.month_index));
+      const btn = document.createElement('button');
+      btn.className = `tab-btn ${String(state.activeMonth) === String(m.month_index) ? 'active' : ''}`;
+      btn.setAttribute('data-month', m.month_index);
+      btn.textContent = m.name;
+      btn.addEventListener('click', () => {
+        dom.monthTabs.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.activeMonth = String(m.month_index);
+        renderApp();
+      });
+      dom.monthTabs.appendChild(btn);
+    });
+
+    if (!validIndices.includes(String(state.activeMonth))) {
+      state.activeMonth = 'all';
+      allBtn.classList.add('active');
+    }
+  }
+
+  function renderPdfOptions() {
+    if (!state.calendar || !state.calendar.months || !dom.pdfTargetSelect) return;
+    const currentVal = dom.pdfTargetSelect.value || 'cumulative';
+    dom.pdfTargetSelect.innerHTML = '';
+
+    state.calendar.months.forEach((m) => {
+      const opt = document.createElement('option');
+      opt.value = m.month_index;
+      opt.textContent = `Bulan ${m.month_index} (${m.name} - ${m.weeks.length} Minggu)`;
+      dom.pdfTargetSelect.appendChild(opt);
+    });
+
+    const cumulativeOpt = document.createElement('option');
+    cumulativeOpt.value = 'cumulative';
+    const totalWeeks = state.calendar.months.reduce((acc, m) => acc + (m.weeks ? m.weeks.length : 0), 0);
+    const firstMonth = state.calendar.months[0]?.name?.split(' ')[0] || '';
+    const lastMonth = state.calendar.months[state.calendar.months.length - 1]?.name?.split(' ')[0] || '';
+    const rangeStr = firstMonth && lastMonth && firstMonth !== lastMonth ? `${firstMonth} - ${lastMonth}` : firstMonth;
+    cumulativeOpt.textContent = `Lengkap Kumulatif (${rangeStr}, ${totalWeeks} Minggu)`;
+    dom.pdfTargetSelect.appendChild(cumulativeOpt);
+
+    const allOpt = document.createElement('option');
+    allOpt.value = 'all';
+    allOpt.textContent = `Kompilasi Seluruh Bundel (${state.calendar.months.length} Bulanan + 1 Kumulatif)`;
+    dom.pdfTargetSelect.appendChild(allOpt);
+
+    if ([...dom.pdfTargetSelect.options].some((o) => o.value === currentVal)) {
+      dom.pdfTargetSelect.value = currentVal;
+    } else {
+      dom.pdfTargetSelect.value = 'cumulative';
+    }
   }
 
   // Rendering
@@ -337,18 +481,39 @@
           const item = document.createElement('div');
           item.className = `day-item ${d.is_filled ? 'filled' : 'missing'}`;
 
-          const hasNote = d.is_filled && d.note;
-          const noteText = hasNote ? d.note : 'Belum ada catatan kegiatan';
-          const safeNoteText = escapeHtml(noteText);
+          const status = (d.status || d.attendance_status || 'hadir').toLowerCase();
+          const isNonHadir = status !== 'hadir';
+
+          let previewText = '';
+          let previewClasses = 'day-note-preview';
+          if (isNonHadir) {
+            previewClasses += ' text-danger';
+            const statusLabel = status.charAt(0).toUpperCase() + status.slice(1);
+            previewText = d.note ? `[${statusLabel}] ${d.note}` : `[Status: ${statusLabel}]`;
+          } else if (d.note) {
+            previewText = d.note;
+          } else {
+            previewClasses += ' empty';
+            previewText = 'Belum ada catatan kegiatan';
+          }
+
+          const safeNoteText = escapeHtml(previewText);
           const datePart0 = d.tanggal_str ? d.tanggal_str.split(' ')[0] : '';
           const datePart1 = d.tanggal_str && d.tanggal_str.split(' ')[1] ? d.tanggal_str.split(' ')[1].slice(0, 3) : '';
           const metaStr = `${d.hari}, ${datePart0} ${datePart1}`;
-          const hoursStr = `${d.jam_masuk}-${d.jam_pulang}`;
+
+          let hoursHtml = '';
+          if (isNonHadir) {
+            const badgeClass = STATUS_BADGES[status] || `badge-${status}`;
+            hoursHtml = `<span class="badge ${badgeClass}">${escapeHtml(status.toUpperCase())}</span>`;
+          } else {
+            hoursHtml = `${escapeHtml(d.jam_masuk)}-${escapeHtml(d.jam_pulang)}`;
+          }
 
           item.innerHTML = `
             <div class="day-meta">${escapeHtml(metaStr)}</div>
-            <div class="day-hours">${escapeHtml(hoursStr)}</div>
-            <div class="day-note-preview ${hasNote ? '' : 'empty'}" title="${safeNoteText}">${safeNoteText}</div>
+            <div class="day-hours">${hoursHtml}</div>
+            <div class="${previewClasses}" title="${safeNoteText}">${safeNoteText}</div>
             <button class="btn btn-sm btn-outline-primary btn-edit-day">Edit</button>
           `;
 
@@ -377,15 +542,12 @@
       applyTheme(state.theme === 'light' ? 'dark' : 'light');
     });
 
-    // Month tabs
-    dom.monthTabs.querySelectorAll('.tab-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        dom.monthTabs.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
-        btn.classList.add('active');
-        state.activeMonth = btn.getAttribute('data-month');
-        renderApp();
+    // Attendance Status change in editor
+    if (dom.editorStatus) {
+      dom.editorStatus.addEventListener('change', (e) => {
+        updateEditorStatusUI(e.target.value);
       });
-    });
+    }
 
     // Status filter buttons
     dom.filterButtons.forEach((btn) => {
@@ -416,7 +578,8 @@
     });
     dom.btnSaveNote.addEventListener('click', () => {
       if (state.activeEditingDay) {
-        saveDayNote(state.activeEditingDay.date, dom.editorNote.value.trim());
+        const selectedStatus = dom.editorStatus ? dom.editorStatus.value : 'hadir';
+        saveDayNote(state.activeEditingDay.date, dom.editorNote.value.trim(), selectedStatus);
       }
     });
 
@@ -429,6 +592,7 @@
     });
 
     dom.btnOpenPdf.addEventListener('click', () => {
+      renderPdfOptions();
       openModal(dom.modalPdf);
     });
     dom.btnTriggerCompile.addEventListener('click', compileAndPreviewPdf);

@@ -408,6 +408,17 @@ body {
   border: 1px solid var(--amber-border);
 }
 
+.badge-izin { background-color: #FEF3C7; color: #B45309; }
+.badge-sakit { background-color: #FEE2E2; color: #B91C1C; }
+.badge-cuti { background-color: #E0E7FF; color: #4338CA; }
+.badge-libur { background-color: #F3F4F6; color: #4B5563; }
+.text-danger { color: #EF4444 !important; font-weight: 600; }
+
+[data-theme="dark"] .badge-izin { background-color: rgba(245, 158, 11, 0.2); color: #FCD34D; }
+[data-theme="dark"] .badge-sakit { background-color: rgba(239, 68, 68, 0.2); color: #FCA5A5; }
+[data-theme="dark"] .badge-cuti { background-color: rgba(99, 102, 241, 0.2); color: #A5B4FC; }
+[data-theme="dark"] .badge-libur { background-color: rgba(156, 163, 175, 0.2); color: #D1D5DB; }
+
 /* Day List in Week Card */
 .day-list {
   display: flex;
@@ -589,6 +600,28 @@ body {
 
 .form-col {
   flex: 1;
+}
+
+.radio-group {
+  display: flex;
+  gap: 1.5rem;
+  margin-top: 0.375rem;
+}
+
+.radio-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--text-main);
+}
+
+.radio-label input[type="radio"] {
+  accent-color: var(--primary);
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
 }
 
 .section-title {

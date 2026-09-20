@@ -36,6 +36,39 @@ class TestWebStatic(unittest.TestCase):
         self.assertIn("fetchCalendar", res.text)
         self.assertIn("formalizeNote", res.text)
 
+    def test_attendance_and_period_elements_present_in_static_files(self):
+        res_html = self.client.get("/")
+        self.assertEqual(res_html.status_code, 200)
+        self.assertIn('id="editor-status"', res_html.text)
+        self.assertIn('id="cfg-periode-mulai"', res_html.text)
+        self.assertIn('id="cfg-periode-selesai"', res_html.text)
+        self.assertIn('name="cfg-hari-kerja"', res_html.text)
+        self.assertIn('value="hadir"', res_html.text)
+        self.assertIn('value="izin"', res_html.text)
+        self.assertIn('value="sakit"', res_html.text)
+        self.assertIn('value="cuti"', res_html.text)
+        self.assertIn('value="libur"', res_html.text)
+        self.assertIn('value="senin_sabtu"', res_html.text)
+        self.assertIn('value="senin_jumat"', res_html.text)
+
+        res_css = self.client.get("/static/styles.css")
+        self.assertEqual(res_css.status_code, 200)
+        self.assertIn('.badge-izin', res_css.text)
+        self.assertIn('.badge-sakit', res_css.text)
+        self.assertIn('.badge-cuti', res_css.text)
+        self.assertIn('.badge-libur', res_css.text)
+        self.assertIn('.text-danger', res_css.text)
+
+    def test_app_js_attendance_and_config(self):
+        res_js = self.client.get("/static/app.js")
+        self.assertEqual(res_js.status_code, 200)
+        self.assertIn('editorStatus', res_js.text)
+        self.assertIn('badge-izin', res_js.text)
+        self.assertIn('text-danger', res_js.text)
+        self.assertIn('cfgPeriodeMulai', res_js.text)
+        self.assertIn('cfg-hari-kerja', res_js.text)
+
 if __name__ == "__main__":
     unittest.main()
+
 
