@@ -11,7 +11,7 @@ import subprocess
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Any
 from scripts.narrative_expander import escape_latex, expand_narrative
 
 
@@ -28,7 +28,7 @@ def _resolve_path(rel_path: str) -> str:
 
 def render_week_page(
     week_data: dict,
-    notes_map: dict[str, str],
+    notes_map: dict[str, Any],
     config: dict,
     assets_dir: str = "assets"
 ) -> str:
@@ -106,10 +106,28 @@ Nama Mitra Industri & : & {mitra_mhs} \\
     for d in week_data["days"]:
         d_str = d["date_str"]
         hari_tgl = f"{d['hari']}, {d['tanggal_str']}"
-        raw_note = notes_map.get(d_str, "")
-        expanded = expand_narrative(raw_note)
-        escaped_note = escape_latex(expanded)
-        row = f"\\textbf{{{hari_tgl}}} & {d['jam_masuk']} & {d['jam_pulang']} & {escaped_note} \\\\"
+        raw_val = notes_map.get(d_str, "")
+        
+        if isinstance(raw_val, dict):
+            status = str(raw_val.get("status", "hadir")).strip().lower()
+            activity_text = str(raw_val.get("kegiatan", "")).strip()
+        else:
+            status = "hadir"
+            activity_text = str(raw_val).strip()
+
+        if status in ("izin", "sakit", "cuti", "libur"):
+            jam_masuk = "-"
+            jam_pulang = "-"
+            status_label = "LIBUR NASIONAL" if status == "libur" else status.upper()
+            escaped_activity = escape_latex(activity_text)
+            note_content = rf"\textcolor{{red}}{{\textbf{{[{status_label}]:}} {escaped_activity}}}"
+        else:
+            jam_masuk = d.get("jam_masuk", "08.00")
+            jam_pulang = d.get("jam_pulang", "16.00")
+            expanded = expand_narrative(activity_text)
+            note_content = escape_latex(expanded)
+
+        row = f"\\textbf{{{hari_tgl}}} & {jam_masuk} & {jam_pulang} & {note_content} \\\\"
         rows_tex.append(row)
 
     table_rows = "\n\\hline\n".join(rows_tex)
@@ -123,17 +141,35 @@ Nama Mitra Industri & : & {mitra_mhs} \\
 {table_rows}
 \hline
 \end{{tabularx}}
-\vspace{{0.3cm}}
+\vspace{{0.2cm}}
 """
 
+    # 2-Tier Signature Block (Without NIM, NIP, NIK labels)
     ttd_tex = rf"""
+\hfill
+\begin{{minipage}}{{0.40\textwidth}}
+\centering
+Mahasiswa,\\[1.3cm]
+\textbf{{{nama_mhs}}}
+\end{{minipage}}
+
+\vspace{{0.15cm}}
+\begin{{center}}
+Mengetahui,
+\end{{center}}
+\vspace{{0.1cm}}
+
 \noindent
-\begin{{tabularx}}{{\textwidth}}{{@{{}}X X X@{{}}}}
-Mahasiswa, & Mengetahui, & \\
-& Dosen Pembimbing, & Pembimbing Lapangan, \\[1.2cm]
-\textbf{{{nama_mhs}}} & \textbf{{{nama_dosen}}} & \textbf{{{nama_lapangan}}} \\
-NIM. {nim_mhs} & NIP. {nip_dosen} & NIK. {nik_lapangan} \\
-\end{{tabularx}}
+\begin{{minipage}}[t]{{0.48\textwidth}}
+\centering
+Dosen Pembimbing,\\[1.3cm]
+\textbf{{{nama_dosen}}}
+\end{{minipage}}\hfill
+\begin{{minipage}}[t]{{0.48\textwidth}}
+\centering
+Pembimbing Lapangan,\\[1.3cm]
+\textbf{{{nama_lapangan}}}
+\end{{minipage}}
 """
 
     return kop_tex + title_tex + identitas_tex + table_tex + ttd_tex
@@ -141,7 +177,7 @@ NIM. {nim_mhs} & NIP. {nip_dosen} & NIK. {nik_lapangan} \\
 
 def generate_latex_document(
     weeks: list[dict],
-    notes_map: dict[str, str],
+    notes_map: dict[str, Any],
     config: dict,
     assets_dir: str = "assets",
     template_path: str = "templates/logbook_template.tex"

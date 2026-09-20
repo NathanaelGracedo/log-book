@@ -61,6 +61,29 @@ class TestLatexBuilder(unittest.TestCase):
         self.assertIn("Mengikuti onboarding \\& instalasi software kerja.", latex)
         self.assertIn("LOG BOOK KEGIATAN", latex)
         self.assertIn(r"\clearpage", latex)
+        self.assertIn(r"\usepackage{xcolor}", latex)
+
+    def test_signature_block_two_tier_layout_without_id_labels(self):
+        latex = generate_latex_document([self.weeks[0]], self.notes_map, self.config)
+        # Verify no NIM, NIP, NIK in signature block
+        self.assertNotIn("NIM.", latex)
+        self.assertNotIn("NIP.", latex)
+        self.assertNotIn("NIK.", latex)
+        # Verify 2-tier structure
+        self.assertIn("Mahasiswa,", latex)
+        self.assertIn("Mengetahui,", latex)
+        self.assertIn("Dosen Pembimbing,", latex)
+        self.assertIn("Pembimbing Lapangan,", latex)
+
+    def test_non_hadir_attendance_status_formatting(self):
+        status_notes = {
+            "2026-07-01": {"status": "izin", "kegiatan": "Izin menghadiri yudisium kampus"}
+        }
+        latex = generate_latex_document([self.weeks[0]], status_notes, self.config)
+        # Hours should be '-'
+        self.assertIn("& - & - &", latex)
+        # Activity note should have red text and [IZIN]: label
+        self.assertIn(r"\textcolor{red}{\textbf{[IZIN]:} Izin menghadiri yudisium kampus}", latex)
 
     def test_single_week_no_clearpage(self):
         single_week = [self.weeks[0]]
