@@ -2,6 +2,7 @@
 import unittest
 import tempfile
 import os
+import shutil
 import datetime
 from pathlib import Path
 import yaml
@@ -10,7 +11,8 @@ from scripts.data_manager import (
     load_all_notes,
     save_note_to_month,
     check_missing_dates,
-    prompt_fill_missing
+    prompt_fill_missing,
+    get_month_templates
 )
 
 class TestDataManager(unittest.TestCase):
@@ -121,6 +123,78 @@ class TestDataManager(unittest.TestCase):
     def test_prompt_fill_missing_empty_list(self):
         filled = prompt_fill_missing([], data_dir=self.data_dir)
         self.assertEqual(filled, 0)
+
+    def test_save_and_load_attendance_status_object(self):
+        tmp_dir = tempfile.mkdtemp(prefix="test_data_status_")
+        try:
+            d = datetime.date(2026, 7, 10)
+            status_payload = {
+                "status": "izin",
+                "kegiatan": "Izin menghadiri pernikahan keluarga"
+            }
+            save_note_to_month(d, status_payload, data_dir=tmp_dir)
+
+            notes = load_all_notes(data_dir=tmp_dir)
+            self.assertIn("2026-07-10", notes)
+            self.assertIsInstance(notes["2026-07-10"], dict)
+            self.assertEqual(notes["2026-07-10"]["status"], "izin")
+            self.assertEqual(notes["2026-07-10"]["kegiatan"], "Izin menghadiri pernikahan keluarga")
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_dynamic_month_templates_and_init(self):
+        tmp_dir = tempfile.mkdtemp(prefix="test_dynamic_months_")
+        try:
+            config = {
+                "periode": {
+                    "tanggal_mulai": "2026-02-01",
+                    "tanggal_selesai": "2026-03-31"
+                },
+                "pengaturan": {"hari_kerja": "senin_jumat"}
+            }
+            templates = get_month_templates(config)
+            self.assertEqual(len(templates), 2)
+            self.assertEqual(templates[0][0], 2)
+            self.assertEqual(templates[1][0], 3)
+
+            init_data_files(tmp_dir, config)
+            files = sorted(os.listdir(tmp_dir))
+            yaml_files = [f for f in files if f.endswith(".yaml")]
+            self.assertEqual(len(yaml_files), 2)
+
+            # Save note within period
+            d = datetime.date(2026, 2, 10)
+            save_note_to_month(d, "kegiatan februari", data_dir=tmp_dir, config=config)
+            notes = load_all_notes(data_dir=tmp_dir, config=config)
+            self.assertIn("2026-02-10", notes)
+            self.assertEqual(notes["2026-02-10"], "kegiatan februari")
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_mixed_notes_string_and_dict(self):
+        tmp_dir = tempfile.mkdtemp(prefix="test_mixed_notes_")
+        try:
+            d1 = datetime.date(2026, 7, 1)
+            d2 = datetime.date(2026, 7, 2)
+            save_note_to_month(d1, "hadir di kantor", data_dir=tmp_dir)
+            save_note_to_month(d2, {"status": "sakit", "kegiatan": "Demam"}, data_dir=tmp_dir)
+
+            notes = load_all_notes(data_dir=tmp_dir)
+            self.assertEqual(notes["2026-07-01"], "hadir di kantor")
+            self.assertEqual(notes["2026-07-02"], {"status": "sakit", "kegiatan": "Demam"})
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_dict_default_status_fallback(self):
+        tmp_dir = tempfile.mkdtemp(prefix="test_default_status_")
+        try:
+            d = datetime.date(2026, 7, 3)
+            save_note_to_month(d, {"kegiatan": "Bekerja di lab"}, data_dir=tmp_dir)
+            notes = load_all_notes(data_dir=tmp_dir)
+            self.assertEqual(notes["2026-07-03"]["status"], "hadir")
+            self.assertEqual(notes["2026-07-03"]["kegiatan"], "Bekerja di lab")
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
 
 if __name__ == "__main__":
     unittest.main()
