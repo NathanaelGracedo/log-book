@@ -68,6 +68,16 @@ class TestLatexBuilder(unittest.TestCase):
         self.assertIn("Budi Santoso", latex)
         self.assertNotIn(r"\clearpage", latex)
 
+    def test_header_layout_single_logo_and_symmetrical_minipages(self):
+        latex = generate_latex_document([self.weeks[0]], self.notes_map, self.config)
+        # Should include polinema logo on the left
+        self.assertIn("polinema.png", latex)
+        # Should NOT include kemendikbud logo
+        self.assertNotIn("kemendikbud.jpg", latex)
+        # Should contain balanced minipage geometry (0.15, 0.70, 0.15)
+        self.assertIn(r"\begin{minipage}[c]{0.15\textwidth}", latex)
+        self.assertIn(r"\begin{minipage}[c]{0.70\textwidth}", latex)
+
     def test_compile_pdf(self):
         latex = generate_latex_document(self.weeks, self.notes_map, self.config)
         with tempfile.TemporaryDirectory() as tmp_dir:

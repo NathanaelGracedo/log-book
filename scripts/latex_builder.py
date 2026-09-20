@@ -50,21 +50,19 @@ def render_week_page(
     nik_lapangan = escape_latex(lapangan.get("nik", "...................................."))
 
     polinema_logo = os.path.abspath(os.path.join(resolved_assets, "polinema.png"))
-    kemendikbud_logo = os.path.abspath(os.path.join(resolved_assets, "kemendikbud.jpg"))
-
-    # Kop surat
     has_polinema = os.path.exists(polinema_logo)
-    has_kemen = os.path.exists(kemendikbud_logo)
-
     logo_left_tex = f"\\includegraphics[height=1.8cm]{{{polinema_logo}}}" if has_polinema else ""
-    logo_right_tex = f"\\includegraphics[height=1.8cm]{{{kemendikbud_logo}}}" if has_kemen else ""
 
+    # Symmetrical 3-column header:
+    # Column 1 (0.15\textwidth): Polinema logo, centered
+    # Column 2 (0.70\textwidth): Official institution typography, centered
+    # Column 3 (0.15\textwidth): Invisible mathematical counterweight (~), guaranteeing exact center alignment
     kop_tex = rf"""
-\begin{{minipage}}[c]{{0.14\textwidth}}
+\begin{{minipage}}[c]{{0.15\textwidth}}
 \centering
 {logo_left_tex}
 \end{{minipage}}%
-\begin{{minipage}}[c]{{0.72\textwidth}}
+\begin{{minipage}}[c]{{0.70\textwidth}}
 \centering
 {{\fontsize{{9pt}}{{10.5pt}}\selectfont \textbf{{KEMENTERIAN PENDIDIKAN TINGGI, SAINS, DAN TEKNOLOGI}}\\}}
 {{\fontsize{{10.5pt}}{{12pt}}\selectfont \textbf{{POLITEKNIK NEGERI MALANG}}\\}}
@@ -73,9 +71,9 @@ def render_week_page(
 {{\fontsize{{7.5pt}}{{9pt}}\selectfont Telepon (0341) 404424, 404425, Faksimile (0341) 404420\\}}
 {{\fontsize{{7.5pt}}{{9pt}}\selectfont Laman www.polinema.ac.id\\}}
 \end{{minipage}}%
-\begin{{minipage}}[c]{{0.14\textwidth}}
+\begin{{minipage}}[c]{{0.15\textwidth}}
 \centering
-{logo_right_tex}
+~
 \end{{minipage}}
 
 \vspace{{1pt}}
